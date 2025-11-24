@@ -1,0 +1,19 @@
+﻿@{
+    Layout = null;
+}
+
+<div style="text-align:center; margin-top:100px; font-family:Arial;">
+    <h1 style="color:#c0392b;">Access Denied</h1>
+    <p>You do not have permission to access this page.</p>
+
+    @if (ViewBag.ReturnUrl != null)
+    {
+        <p>
+            <a href="@ViewBag.ReturnUrl">Go back</a>
+        </p>
+    }
+
+    <p>
+        <a href="/Account/Login">Return to Login</a>
+    </p>
+</div>

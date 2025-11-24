@@ -1,0 +1,46 @@
+﻿@model LibraryManagementSystem.Models.LoginViewModel
+@{
+    Layout = null;
+}
+
+<link rel="stylesheet" href="~/css/login.css" />
+
+<div class="login-page">
+    <div class="login-card">
+        <div class="login-icon">📚</div>
+        <h2 class="login-title">Library Management System</h2>
+        <p class="login-subtitle">Sign in to continue</p>
+
+        <form asp-action="Login" asp-controller="Account" method="post">
+            <div class="form-row">
+                <label>Email</label>
+                <input asp-for="Email" type="email" placeholder="Enter email" required />
+
+            </div>
+
+            <div class="form-row">
+                <label>Password</label>
+                <input asp-for="Password" type="password" placeholder="Enter password" />
+            </div>
+
+            <div class="form-row">
+                <label>Login as</label>
+                <select asp-for="Role">
+                    <option value="Admin">Admin</option>
+                    <option value="Librarian">Librarian</option>
+                    <option value="Student">Student</option>
+                </select>
+            </div>
+
+            <div class="form-row">
+                <button type="submit" class="btn-primary">Login</button>
+            </div>
+
+            <div class="validation">
+                @Html.ValidationSummary()
+            </div>
+        </form>
+
+        <p class="login-footer">© 2025 Library Management System</p>
+    </div>
+</div>

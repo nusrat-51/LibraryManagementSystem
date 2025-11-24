@@ -1,0 +1,87 @@
+﻿@model IEnumerable<LibraryManagementSystem.Models.IssueRecord>
+
+@{
+    Layout = null;
+}
+
+<link rel="stylesheet" href="~/css/dashboard.css" />
+
+<div class="layout">
+
+    <aside class="sidebar">
+        <div class="brand">
+            <span class="brand-logo">📚</span>
+            <span class="brand-name">LMS</span>
+        </div>
+
+        <nav class="menu">
+            <a href="/Student/Dashboard" class="menu-item">Dashboard</a>
+            <a href="/Student/MyIssues" class="menu-item active">My Issued Books</a>
+            <a href="/Books/Index" class="menu-item">View Books (read-only)</a>
+            <a href="/Account/Logout" class="menu-item">Logout</a>
+        </nav>
+    </aside>
+
+    <div class="main">
+        <header class="topbar">
+            <h1 class="page-title">My Issued Books</h1>
+        </header>
+
+        <main class="content">
+
+            <section class="panel">
+                <div class="panel-header">
+                    <h2>Current Issues</h2>
+                </div>
+
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Book</th>
+                                <th>Author</th>
+                                <th>Issue Date</th>
+                                <th>Due Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (!Model.Any())
+                            {
+                                <tr>
+                                    <td colspan="6">You don’t have any issued books yet.</td>
+                                </tr>
+                            }
+                            else
+                            {
+                                var i = 1;
+                                foreach (var issue in Model)
+                                {
+                                    var statusClass = issue.IsOverdue ? "badge danger" : "badge success";
+                                    var statusText = issue.IsOverdue ? "Overdue" : "On Time";
+
+                                    <tr>
+                                        <td>@i</td>
+                                        <td>@issue.BookTitle</td>
+                                        <td>@issue.Author</td>
+                                        <td>@issue.IssueDate.ToString("dd MMM yyyy")</td>
+                                        <td>@issue.DueDate.ToString("dd MMM yyyy")</td>
+                                        <td><span class="@statusClass">@statusText</span></td>
+                                    </tr>
+
+                                    i++;
+                                }
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </main>
+
+        <footer class="footer">
+            © 2025 Library Management System
+        </footer>
+    </div>
+</div>
