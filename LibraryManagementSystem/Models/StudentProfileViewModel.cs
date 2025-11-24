@@ -2,8 +2,9 @@
 {
     public class StudentProfileViewModel
     {
-        public string Name { get; set; }   // later from DB; for now dummy
-        public string Email { get; set; }
-        public string Role { get; set; }
+        public string Name { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
+
     }
 }

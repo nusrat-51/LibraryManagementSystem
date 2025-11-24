@@ -1,0 +1,31 @@
+﻿@model LibraryManagementSystem.Models.StudentProfileViewModel
+@{
+    Layout = "~/Views/Shared/Layoutstudent.cshtml";
+}
+
+<link rel="stylesheet" href="~/css/dashboard.css" />
+
+<div class="main-content">
+    <h1 class="page-title">My Profile</h1>
+
+    <section class="panel">
+        <div class="panel-header"><h2>Profile Information</h2></div>
+
+        <div class="profile-info">
+            <p><strong>Name:</strong> @Model.Name</p>
+            <p><strong>Email:</strong> @Model.Email</p>
+            <p><strong>Role:</strong> Student</p>
+        </div>
+    </section>
+</div>
+
+<style>
+    .main-content {
+        padding: 2rem;
+    }
+
+    .profile-info p {
+        font-size: 1.1rem;
+        margin-bottom: 0.6rem;
+    }
+</style>

@@ -1,0 +1,155 @@
+﻿@model IEnumerable<LibraryManagementSystem.Models.Book>
+
+@{
+    Layout = "~/Views/Shared/Layoutstudent.cshtml";
+    var categories = ViewBag.Categories as IEnumerable<string> ?? Enumerable.Empty<string>();
+    string currentSearch = ViewBag.Search as string ?? "";
+    string selectedCategory = ViewBag.SelectedCategory as string ?? "";
+}
+
+<link rel="stylesheet" href="~/css/dashboard.css" />
+
+<header class="topbar">
+    <h1 class="page-title">Library Books (read-only)</h1>
+</header>
+
+<section class="content">
+
+    <!-- 🔍 Search + Filter bar -->
+    <form asp-action="Books" method="get" class="filters">
+        <div class="filters-left">
+            <input type="text"
+                   name="search"
+                   value="@currentSearch"
+                   placeholder="Search by title or author"
+                   class="filter-input" />
+
+            <select name="category" class="filter-select">
+                <option value="">All categories</option>
+
+                @foreach (var cat in categories)
+                {
+                    if (selectedCategory == cat)
+                    {
+                        <option value="@cat" selected>@cat</option>
+                    }
+                    else
+                    {
+                        <option value="@cat">@cat</option>
+                    }
+                }
+            </select>
+        </div>
+
+        <div class="filters-right">
+            <button type="submit" class="btn btn-primary">Apply</button>
+            <a asp-action="Books" class="btn btn-secondary">Clear</a>
+        </div>
+    </form>
+
+    <!-- 📚 Books table -->
+    <section class="panel">
+        <div class="panel-header">
+            <h2>Available Books</h2>
+        </div>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Title</th>
+                        <th>Author</th>
+                        <th>Category</th>
+                        <th>Total Copies</th>
+                        <th>Available</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!Model.Any())
+                    {
+                        <tr>
+                            <td colspan="6" class="empty-row">
+                                No books found for the selected filters.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        var i = 1;
+                        foreach (var book in Model)
+                        {
+                            <tr>
+                                <td>@i</td>
+                                <td>@book.Title</td>
+                                <td>@book.Author</td>
+                                <td>@book.Category</td>
+                                <td>@book.TotalCopies</td>
+                                <td>@book.AvailableCopies</td>
+                            </tr>
+                            i++;
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+</section>
+
+<style>
+    .filters {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .filters-left {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .filters-right {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .filter-input,
+    .filter-select {
+        padding: 0.55rem 0.75rem;
+        border-radius: 0.5rem;
+        border: 1px solid #d0d7e2;
+        min-width: 220px;
+    }
+
+    .btn {
+        padding: 0.5rem 0.9rem;
+        border-radius: 0.5rem;
+        border: none;
+        cursor: pointer;
+        font-size: 0.9rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-primary {
+        background: #2563eb;
+        color: white;
+    }
+
+    .btn-secondary {
+        background: #e5e7eb;
+        color: #111827;
+    }
+
+    .empty-row {
+        text-align: center;
+        color: #6b7280;
+    }
+</style>
