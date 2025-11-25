@@ -1,53 +1,151 @@
 ﻿@{
     Layout = null;
 }
+
 <link rel="stylesheet" href="~/css/dashboard.css" />
 
 <div class="layout">
 
-    @* Sidebar *@
+    <!-- SIDEBAR -->
     <aside class="sidebar">
         <div class="brand">
             <span class="brand-logo">📚</span>
             <span class="brand-name">LMS</span>
         </div>
+
         <nav class="menu">
             <a href="/Student/Dashboard" class="menu-item active">Dashboard</a>
-            <a href="/Student/Books" class="menu-item">View Books</a>
             <a href="/Student/MyIssues" class="menu-item">My Issued Books</a>
-            <a href="/Student/Profile" class="menu-item">Profile</a>
+            <a href="/Student/Books" class="menu-item">View Books (read-only)</a>
             <a href="/Account/Logout" class="menu-item">Logout</a>
         </nav>
     </aside>
 
+    <!-- MAIN PART -->
     <div class="main">
+
+        <!-- TOP BAR -->
         <header class="topbar">
             <h1 class="page-title">Student Dashboard</h1>
+
+            <div class="topbar-right">
+                <div class="search-box">
+                    <input type="text" placeholder="Search books..." />
+                </div>
+                <div class="user-badge">
+                    <div class="avatar">S</div>
+                    <div class="user-info">
+                        <span class="user-name">@User.Identity?.Name</span>
+                        <span class="user-role">Student</span>
+                    </div>
+                </div>
+            </div>
         </header>
 
+        <!-- MAIN CONTENT -->
         <main class="content">
+
+            <!-- TOP CARDS -->
             <section class="cards">
                 <div class="card">
+                    <p class="card-label">Books Issued</p>
+                    <p class="card-value">--</p>
+                    <p class="card-sub">Currently borrowed by you</p>
+                </div>
+                <div class="card">
+                    <p class="card-label">Overdue</p>
+                    <p class="card-value danger">--</p>
+                    <p class="card-sub">Need to return soon</p>
+                </div>
+                <div class="card">
                     <p class="card-label">Total Books</p>
-                    <p class="card-value">@ViewBag.TotalBooks</p>
+                    <p class="card-value">--</p>
+                    <p class="card-sub">Available in library</p>
                 </div>
-
                 <div class="card">
-                    <p class="card-label">Books Issued to You</p>
-                    <p class="card-value">@ViewBag.ActiveIssues</p>
-                </div>
-
-                <div class="card">
-                    <p class="card-label">Overdue Books</p>
-                    <p class="card-value danger">@ViewBag.Overdue</p>
+                    <p class="card-label">Notifications</p>
+                    <p class="card-value">--</p>
+                    <p class="card-sub">New announcements</p>
                 </div>
             </section>
 
-            <p>Welcome, student! Use the menu to view books and your issue history.</p>
+            <!-- RECENT ISSUES + NOTIFICATIONS -->
+            <section class="grid-two">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2>My Recent Issued Books</h2>
+                        <a href="/Student/MyIssues" class="link-small">View all</a>
+                    </div>
+
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Book</th>
+                                    <th>Issue Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>–</td>
+                                    <td>–</td>
+                                    <td><span class="badge">No Data</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-header">
+                        <h2>Library Notifications</h2>
+                        <a href="#" class="link-small">View all</a>
+                    </div>
+
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Date</th>
+                                    <th>Note</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>No notifications</td>
+                                    <td>--</td>
+                                    <td>Messages from library will appear here.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- QUICK ACTIONS -->
+            <section class="panel quick-actions">
+                <div class="panel-header">
+                    <h2>Quick Actions</h2>
+                </div>
+                <div class="actions-grid">
+                    <a href="/Student/Books" class="action-card">
+                        <h3>Browse Books</h3>
+                        <p>See all available books in the library.</p>
+                    </a>
+                    <a href="/Student/MyIssues" class="action-card">
+                        <h3>My Issued Books</h3>
+                        <p>View and track your borrowed books.</p>
+                    </a>
+                </div>
+            </section>
+
         </main>
 
         <footer class="footer">
             © 2025 Library Management System
         </footer>
+
     </div>
 </div>

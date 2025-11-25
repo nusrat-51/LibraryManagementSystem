@@ -1,0 +1,38 @@
+﻿@{
+    var currentPath = Context.Request.Path;   // <-- THIS IS CORRECT
+}
+
+<link rel="stylesheet" href="~/css/dashboard.css" />
+
+<div class="layout">
+    <aside class="sidebar">
+        <div class="brand">
+            <span class="brand-logo">📚</span>
+            <span class="brand-name">LMS</span>
+        </div>
+
+        <nav class="menu">
+
+            <a href="/Student/Dashboard"
+               class="menu-item @(currentPath.StartsWithSegments("/Student/Dashboard") ? "active" : "")">
+                Dashboard
+            </a>
+
+            <a href="/Student/MyIssues"
+               class="menu-item @(currentPath.StartsWithSegments("/Student/MyIssues") ? "active" : "")">
+                My Issued Books
+            </a>
+
+            <a href="/Student/Books"
+               class="menu-item @(currentPath.StartsWithSegments("/Student/Books") ? "active" : "")">
+                View Books (read-only)
+            </a>
+
+            <a href="/Account/Logout" class="menu-item">Logout</a>
+        </nav>
+    </aside>
+
+    <div class="main">
+        @RenderBody()
+    </div>
+</div>

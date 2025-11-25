@@ -1,17 +1,27 @@
-﻿namespace LibraryManagementSystem.Models
+﻿using System;
+
+namespace LibraryManagementSystem.Models
 {
     public class IssueRecord
     {
-        public int Id { get; set; }
+        public int IssueRecordId { get; set; }
 
-        public string StudentEmail { get; set; } = string.Empty;   // who borrowed
-        public string BookTitle { get; set; } = string.Empty;
-        public string Author { get; set; } = string.Empty;
+        // Book er primary key
+        public int BookId { get; set; }
 
+        // Je student issue koreche tar email
+        public string StudentEmail { get; set; } = string.Empty;
+
+        // Issue date
         public DateTime IssueDate { get; set; }
-        public DateTime DueDate { get; set; }
 
-        // calculated property
-        public bool IsOverdue => DateTime.Today > DueDate;
+        // Return date (nullable – jodi ekhono return na kore)
+        public DateTime? ReturnDate { get; set; }
+
+        // "Issued" / "Returned"
+        public string Status { get; set; } = string.Empty;
+
+        // Navigation property (optional)
+        public Book? Book { get; set; }
     }
 }

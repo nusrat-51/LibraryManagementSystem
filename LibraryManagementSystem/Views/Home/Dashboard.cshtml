@@ -12,32 +12,22 @@
             <span class="brand-name">LMS</span>
         </div>
 
+        <!-- SINGLE sidebar menu: Admin/Librarian -->
         <nav class="menu">
             <a href="/Home/Dashboard" class="menu-item active">Dashboard</a>
             <a href="/Books/Index" class="menu-item">Books</a>
 
             <a href="#" class="menu-item">Users</a>
-            <a href="/Issue/Index" class="menu-item">Issues</a>    <!-- pore banabo -->
-            <a href="/Return/Index" class="menu-item">Returns</a>  <!-- pore banabo -->
+            <a href="/Issue/Index" class="menu-item">Issues</a>
+            <a href="/Return/Index" class="menu-item">Returns</a>
             <a href="/Reservation/Index" class="menu-item">Reservations</a>
             <a href="/Fine/Index" class="menu-item">Fines</a>
             <a href="/Report/Index" class="menu-item">Reports</a>
             <a href="/Account/Logout" class="menu-item">Logout</a>
-
         </nav>
-        <nav class="menu">
-            <a href="/Student/Dashboard" class="menu-item active">Dashboard</a>
-            <a href="/Student/MyIssues" class="menu-item">My Issued Books</a>
-            <a href="/Books/Index" class="menu-item">View Books (read-only)</a>
-            <a href="/Account/Logout" class="menu-item">Logout</a>
-        </nav>
-
-
     </aside>
 
-
     <div class="main">
-
 
         <header class="topbar">
             <h1 class="page-title">Dashboard</h1>
@@ -56,9 +46,9 @@
             </div>
         </header>
 
-
         <main class="content">
 
+            <!-- Top cards -->
             <section class="cards">
                 <div class="card">
                     <p class="card-label">Total Books</p>
@@ -82,13 +72,12 @@
                 </div>
             </section>
 
+            <!-- Recent issues + fines -->
             <section class="grid-two">
-
-
                 <div class="panel">
                     <div class="panel-header">
                         <h2>Recent Issued Books</h2>
-                        <a href="issuebook.html" class="link-small">View all</a>
+                        <a href="/Issue/Index" class="link-small">View all</a>
                     </div>
 
                     <div class="table-wrapper">
@@ -132,7 +121,7 @@
                 <div class="panel">
                     <div class="panel-header">
                         <h2>Overdue & Fines</h2>
-                        <a href="#" class="link-small">View fine report</a>
+                        <a href="/Fine/Index" class="link-small">View fine report</a>
                     </div>
 
                     <div class="table-wrapper">
@@ -172,27 +161,27 @@
                         </table>
                     </div>
                 </div>
-
             </section>
 
+            <!-- Quick actions -->
             <section class="panel quick-actions">
                 <div class="panel-header">
                     <h2>Quick Actions</h2>
                 </div>
                 <div class="actions-grid">
-                    <a href="Managebook.html" class="action-card">
+                    <a href="/Books/Index" class="action-card">
                         <h3>Manage Books</h3>
                         <p>Add, edit, or remove books.</p>
                     </a>
-                    <a href="issuebook.html" class="action-card">
+                    <a href="/Issue/Index" class="action-card">
                         <h3>Issue Book</h3>
                         <p>Issue books to members.</p>
                     </a>
-                    <a href="returnbook.html" class="action-card">
+                    <a href="/Return/Index" class="action-card">
                         <h3>Return Book</h3>
                         <p>Process book returns & fines.</p>
                     </a>
-                    <a href="#" class="action-card">
+                    <a href="/Report/Index" class="action-card">
                         <h3>View Reports</h3>
                         <p>Check usage and fine reports.</p>
                     </a>
@@ -206,9 +195,3 @@
         </footer>
     </div>
 </div>
-
-@*
-    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-*@
-@{
-}
