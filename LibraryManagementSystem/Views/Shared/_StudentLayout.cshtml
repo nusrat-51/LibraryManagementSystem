@@ -10,8 +10,12 @@
             <span class="brand-logo">📚</span>
             <span class="brand-name">LMS</span>
         </div>
-
         <nav class="menu">
+            <a asp-controller="Student" asp-action="Dashboard" class="menu-item">Dashboard</a>
+            <a asp-controller="Student" asp-action="MyIssues" class="menu-item">My Issued Books</a>
+            <a asp-controller="Student" asp-action="ViewBooks" class="menu-item">View Books (read-only)</a>
+            <a asp-controller="Account" asp-action="Logout" class="menu-item">Logout</a>
+        </nav>
 
             <a href="/Student/Dashboard"
                class="menu-item @(currentPath.StartsWithSegments("/Student/Dashboard") ? "active" : "")">

@@ -24,8 +24,11 @@ namespace LibraryManagementSystem.Migrations
 
             modelBuilder.Entity("LibraryManagementSystem.Models.Book", b =>
                 {
-                    b.Property<string>("Id")
-                        .HasColumnType("nvarchar(450)");
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Author")
                         .IsRequired()
@@ -52,17 +55,14 @@ namespace LibraryManagementSystem.Migrations
 
             modelBuilder.Entity("LibraryManagementSystem.Models.IssueRecord", b =>
                 {
-                    b.Property<int>("IssueRecordId")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IssueRecordId"));
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("BookId")
                         .HasColumnType("int");
-
-                    b.Property<string>("BookId1")
-                        .HasColumnType("nvarchar(450)");
 
                     b.Property<DateTime>("IssueDate")
                         .HasColumnType("datetime2");
@@ -78,9 +78,9 @@ namespace LibraryManagementSystem.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("IssueRecordId");
+                    b.HasKey("Id");
 
-                    b.HasIndex("BookId1");
+                    b.HasIndex("BookId");
 
                     b.ToTable("IssueRecords");
                 });
@@ -89,7 +89,9 @@ namespace LibraryManagementSystem.Migrations
                 {
                     b.HasOne("LibraryManagementSystem.Models.Book", "Book")
                         .WithMany()
-                        .HasForeignKey("BookId1");
+                        .HasForeignKey("BookId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Book");
                 });

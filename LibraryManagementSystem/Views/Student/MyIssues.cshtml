@@ -32,7 +32,8 @@
                 <td>
                     @if (issue.Status == "Issued")
                     {
-                        <form method="post" action="/Issue/ReturnBook?issueId=@issue.IssueRecordId">
+                        <!-- ekhane IssueRecordId na, ekhon property er nam Id -->
+                        <form method="post" action="/Issue/ReturnBook?issueId=@issue.Id">
                             <button class="btn btn-warning btn-sm">Return</button>
                         </form>
                     }
