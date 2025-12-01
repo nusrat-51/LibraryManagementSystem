@@ -9,7 +9,7 @@
 <table class="table table-bordered">
     <thead>
         <tr>
-            <th>Book ID</th>
+            <th>Book</th>
             <th>Issued On</th>
             <th>Status</th>
             <th>Return Date</th>
@@ -21,7 +21,7 @@
         @foreach (var issue in Model)
         {
             <tr>
-                <td>@issue.BookId</td>
+                <td>@issue.Book?.Title (@issue.BookId)</td>
                 <td>@issue.IssueDate.ToShortDateString()</td>
                 <td>@issue.Status</td>
                 <td>
@@ -32,7 +32,6 @@
                 <td>
                     @if (issue.Status == "Issued")
                     {
-                        <!-- ekhane IssueRecordId na, ekhon property er nam Id -->
                         <form method="post" action="/Issue/ReturnBook?issueId=@issue.Id">
                             <button class="btn btn-warning btn-sm">Return</button>
                         </form>

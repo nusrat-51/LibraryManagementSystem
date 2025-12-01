@@ -25,5 +25,7 @@ namespace LibraryManagementSystem.Models
         public bool HasPremiumAccess { get; set; }
         public List<Book> PremiumBooksSample { get; set; } = new();
         public List<IssueRecord> RecentIssues { get; set; } = new();
+        public bool IsPremium { get; set; }
+
     }
 }

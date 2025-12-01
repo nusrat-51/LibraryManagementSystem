@@ -10,7 +10,11 @@ namespace LibraryManagementSystem.Data
         {
         }
 
-        public DbSet<Book> Books { get; set; } = null!;
-        public DbSet<IssueRecord> IssueRecords { get; set; } = null!;
+        public DbSet<Book> Books { get; set; } = default!;
+        public DbSet<IssueRecord> IssueRecords { get; set; } = default!;
+        public DbSet<Fine> Fines { get; set; } = default!;
+
+        // 👉 ekhane new line:
+        public DbSet<Reservation> Reservations { get; set; } = default!;
     }
 }

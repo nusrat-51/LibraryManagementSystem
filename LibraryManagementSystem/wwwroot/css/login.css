@@ -1,4 +1,4 @@
-/* Basic reset */
+
 * {
     margin: 0;
     padding: 0;
@@ -15,7 +15,6 @@ body {
     background: linear-gradient(135deg, #6fa8ff, #9cc9ff);
 }
 
-/* Center wrapper */
 .login-page {
     width: 100%;
     display: flex;
@@ -23,7 +22,7 @@ body {
     padding: 24px;
 }
 
-/* Card */
+
 .login-card {
     background: #ffffff;
     border-radius: 18px;
@@ -34,7 +33,7 @@ body {
     text-align: center;
 }
 
-/* Icon */
+
 .login-icon {
     width: 56px;
     height: 56px;
@@ -47,7 +46,6 @@ body {
     margin: 0 auto 16px;
 }
 
-/* Titles */
 .login-title {
     font-size: 22px;
     font-weight: 700;
@@ -61,7 +59,7 @@ body {
     margin-bottom: 24px;
 }
 
-/* Form rows */
+
 .form-row {
     text-align: left;
     margin-bottom: 14px;
@@ -92,7 +90,7 @@ body {
             box-shadow: 0 0 0 2px rgba(41, 98, 255, 0.18);
         }
 
-/* Button */
+
 .btn-primary {
     width: 100%;
     border: none;
@@ -115,14 +113,14 @@ body {
         transform: scale(0.98);
     }
 
-/* Validation message */
+
 .validation {
     margin-top: 6px;
     font-size: 13px;
     color: #d32f2f;
 }
 
-/* Footer */
+
 .login-footer {
     margin-top: 18px;
     font-size: 12px;

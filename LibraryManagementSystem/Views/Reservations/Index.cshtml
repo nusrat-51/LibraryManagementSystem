@@ -1,0 +1,42 @@
+﻿@using LibraryManagementSystem.Models
+@model IEnumerable<Reservation>
+
+@{
+    ViewData["Title"] = "Reservations";
+}
+
+<h2>Reservations</h2>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">Create New Reservation</a>
+</p>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Book</th>
+            <th>Student Email</th>
+            <th>Requested At</th>
+            <th>Status</th>
+            <th>Queue</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var r in Model)
+        {
+            <tr>
+                <td>@r.Book?.Title</td>
+                <td>@r.StudentEmail</td>
+                <td>@r.RequestedAt.ToString("dd MMM yyyy HH:mm")</td>
+                <td>@r.Status</td>
+                <td>@r.QueuePosition</td>
+                <td>
+                    <a asp-action="Details" asp-route-id="@r.Id">Details</a> |
+                    <a asp-action="Edit" asp-route-id="@r.Id">Edit</a> |
+                    <a asp-action="Delete" asp-route-id="@r.Id">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
