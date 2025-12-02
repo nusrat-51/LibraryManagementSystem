@@ -9,23 +9,23 @@ namespace LibraryManagementSystem.Controllers
 {
     public class AccountController : Controller
     {
-        private readonly SignInManager<ApplicationUser> _signInManager;
-        private readonly UserManager<ApplicationUser> _userManager;
-        private readonly RoleManager<IdentityRole> _roleManager;   // 👈 NEW
+        // 🔹 Use IdentityUser here
+        private readonly SignInManager<IdentityUser> _signInManager;
+        private readonly UserManager<IdentityUser> _userManager;
+        private readonly RoleManager<IdentityRole> _roleManager;
         private readonly LibraryContext _context;
 
         public AccountController(
-            SignInManager<ApplicationUser> signInManager,
-            UserManager<ApplicationUser> userManager,
-            RoleManager<IdentityRole> roleManager,                 // 👈 NEW
+            SignInManager<IdentityUser> signInManager,
+            UserManager<IdentityUser> userManager,
+            RoleManager<IdentityRole> roleManager,
             LibraryContext context)
         {
             _signInManager = signInManager;
             _userManager = userManager;
-            _roleManager = roleManager;                            // 👈 NEW
+            _roleManager = roleManager;
             _context = context;
         }
-
 
         // =========================
         //  LOGIN (GET)
@@ -51,7 +51,7 @@ namespace LibraryManagementSystem.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
-            // find user by email
+            // 1) find user by email
             var user = await _userManager.FindByEmailAsync(model.Email);
             if (user == null)
             {
@@ -59,7 +59,7 @@ namespace LibraryManagementSystem.Controllers
                 return View(model);
             }
 
-            // password check
+            // 2) password check
             var result = await _signInManager.PasswordSignInAsync(
                 user, model.Password, isPersistent: false, lockoutOnFailure: false);
 
@@ -69,7 +69,7 @@ namespace LibraryManagementSystem.Controllers
                 return View(model);
             }
 
-            // redirect based on real role from DB
+            // 3) redirect based on real role from DB
             if (await _userManager.IsInRoleAsync(user, "Librarian"))
             {
                 return RedirectToAction("Dashboard", "Librarian");
@@ -106,10 +106,12 @@ namespace LibraryManagementSystem.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
-            var user = new ApplicationUser
+            // 🔹 Use IdentityUser here as well
+            var user = new IdentityUser
             {
                 UserName = model.Email,
-                Email = model.Email
+                Email = model.Email,
+                EmailConfirmed = true
             };
 
             var result = await _userManager.CreateAsync(user, model.Password);
@@ -123,14 +125,14 @@ namespace LibraryManagementSystem.Controllers
                 return View(model);
             }
 
-            // ✅ 1) Ensure Student role exists
+            // ✅ Ensure Student role exists
             const string studentRole = "Student";
             if (!await _roleManager.RoleExistsAsync(studentRole))
             {
                 await _roleManager.CreateAsync(new IdentityRole(studentRole));
             }
 
-            // ✅ 2) Put this user into Student role
+            // ✅ Put this user into Student role
             var roleResult = await _userManager.AddToRoleAsync(user, studentRole);
             if (!roleResult.Succeeded)
             {
@@ -138,11 +140,10 @@ namespace LibraryManagementSystem.Controllers
                 {
                     ModelState.AddModelError(string.Empty, error.Description);
                 }
-                // optional: delete user if role assign failed
                 return View(model);
             }
 
-            // (optional) membership creation here...
+            // (optional) create Membership row here later if you want
 
             await _signInManager.SignInAsync(user, isPersistent: false);
             return RedirectToAction("Dashboard", "Student");
@@ -159,12 +160,10 @@ namespace LibraryManagementSystem.Controllers
             return RedirectToAction("Login", "Account");
         }
 
-        // optional AccessDenied action
         [HttpGet]
         public IActionResult AccessDenied()
         {
             return View();
         }
-        
     }
 }
