@@ -1,0 +1,62 @@
+﻿@model IEnumerable<LibraryManagementSystem.Models.Book>
+
+@{
+    ViewData["Title"] = "Manage Books";
+}
+
+<h1>Manage Books</h1>
+
+@if (TempData["BookMessage"] != null)
+{
+    <div class="alert alert-success">
+        @TempData["BookMessage"]
+    </div>
+}
+
+<p>
+    <a asp-action="CreateBook" class="btn btn-primary">Add New Book</a>
+</p>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Id</th>
+            <th>Title</th>
+            <th>Author</th>
+            <th>Category</th>
+            <th>Total Copies</th>
+            <th>Available</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var book in Model)
+        {
+            <tr>
+                <td>@book.Id</td>
+                <td>@book.Title</td>
+                <td>@book.Author</td>
+                <td>@book.Category</td>
+                <td>@book.TotalCopies</td>
+                <td>
+                    @{
+                        // use AvailableCopies if you have it, otherwise show TotalCopies
+                        var availableProp = book.GetType().GetProperty("AvailableCopies");
+                        var available = availableProp != null
+                        ? (int)availableProp.GetValue(book)!
+                        : book.TotalCopies;
+                    }
+                    @available
+                </td>
+                <td>
+                    <a asp-action="EditBook" asp-route-id="@book.Id" class="btn btn-sm btn-secondary">
+                        Edit
+                    </a>
+                    <a asp-action="DeleteBook" asp-route-id="@book.Id" class="btn btn-sm btn-danger">
+                        Delete
+                    </a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

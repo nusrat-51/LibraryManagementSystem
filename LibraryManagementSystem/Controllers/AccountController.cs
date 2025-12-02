@@ -1,96 +1,170 @@
-﻿using LibraryManagementSystem.Models;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
+﻿using System.Threading.Tasks;
+using LibraryManagementSystem.Data;
+using LibraryManagementSystem.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using System.Reflection;
-using System.Security.Claims;
 
 namespace LibraryManagementSystem.Controllers
 {
     public class AccountController : Controller
     {
-        // GET: /Account/Login
-        [HttpGet]
-        public IActionResult Login()
+        private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly RoleManager<IdentityRole> _roleManager;   // 👈 NEW
+        private readonly LibraryContext _context;
+
+        public AccountController(
+            SignInManager<ApplicationUser> signInManager,
+            UserManager<ApplicationUser> userManager,
+            RoleManager<IdentityRole> roleManager,                 // 👈 NEW
+            LibraryContext context)
         {
-            return View();
+            _signInManager = signInManager;
+            _userManager = userManager;
+            _roleManager = roleManager;                            // 👈 NEW
+            _context = context;
         }
 
-        // POST: /Account/Login
-        [HttpPost]
-        public async Task<IActionResult> Login(LoginViewModel model)
+
+        // =========================
+        //  LOGIN (GET)
+        // =========================
+        [HttpGet]
+        [AllowAnonymous]
+        public IActionResult Login(string? returnUrl = null)
         {
+            ViewData["ReturnUrl"] = returnUrl;
+            return View(new LoginViewModel());
+        }
+
+        // =========================
+        //  LOGIN (POST)
+        // =========================
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
+        {
+            ViewData["ReturnUrl"] = returnUrl;
+
             if (!ModelState.IsValid)
-            {
                 return View(model);
-            }
 
-            // Simple hard-coded users (for project/demo)
-         
-               var users = new[]
-{
-    new { Email = "admin@gmail.com",     Password = "admin123",   Role = "Admin" },
-    new { Email = "librarian@gmail.com", Password = "lib123",     Role = "Librarian" },
-    new { Email = "student@gmail.com",   Password = "student123", Role = "Student" }
-};
-
-            var user = users.FirstOrDefault(u =>
-      u.Email.Equals(model.Email, StringComparison.OrdinalIgnoreCase) &&
-      u.Password == model.Password &&
-      u.Role == model.Role);
-
-
+            // find user by email
+            var user = await _userManager.FindByEmailAsync(model.Email);
             if (user == null)
             {
-                ModelState.AddModelError("", "Invalid username, password, or role.");
+                ModelState.AddModelError(string.Empty, "Invalid login attempt.");
                 return View(model);
             }
 
-            // Create claims
-            var claims = new List<Claim>
-{
-    new Claim(ClaimTypes.Name, user.Email),   // <-- PUT HERE
-    new Claim(ClaimTypes.Role, user.Role)
-};
+            // password check
+            var result = await _signInManager.PasswordSignInAsync(
+                user, model.Password, isPersistent: false, lockoutOnFailure: false);
 
-
-            var claimsIdentity = new ClaimsIdentity(
-                claims, CookieAuthenticationDefaults.AuthenticationScheme);
-
-            var authProperties = new AuthenticationProperties
+            if (!result.Succeeded)
             {
-                IsPersistent = true       // remember me like behavior
-            };
+                ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                return View(model);
+            }
 
-            await HttpContext.SignInAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme,
-                new ClaimsPrincipal(claimsIdentity),
-                authProperties);
-
-            // Redirect by role
-            return user.Role switch
+            // redirect based on real role from DB
+            if (await _userManager.IsInRoleAsync(user, "Librarian"))
             {
-                "Admin" or "Librarian" => RedirectToAction("Dashboard", "Home"),
-                "Student" => RedirectToAction("Dashboard", "Student"),
-                _ => RedirectToAction("Index", "Home")
-            };
+                return RedirectToAction("Dashboard", "Librarian");
+            }
+            else if (await _userManager.IsInRoleAsync(user, "Admin"))
+            {
+                return RedirectToAction("Index", "Admin");
+            }
+            else
+            {
+                // default: student
+                return RedirectToAction("Dashboard", "Student");
+            }
         }
 
-        // GET: /Account/Logout
+        // =========================
+        //  REGISTER STUDENT (GET)
+        // =========================
+        [HttpGet]
+        [AllowAnonymous]
+        public IActionResult Register()
+        {
+            return View(new RegisterViewModel());
+        }
+
+        // =========================
+        //  REGISTER STUDENT (POST)
+        // =========================
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Register(RegisterViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var user = new ApplicationUser
+            {
+                UserName = model.Email,
+                Email = model.Email
+            };
+
+            var result = await _userManager.CreateAsync(user, model.Password);
+
+            if (!result.Succeeded)
+            {
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
+                return View(model);
+            }
+
+            // ✅ 1) Ensure Student role exists
+            const string studentRole = "Student";
+            if (!await _roleManager.RoleExistsAsync(studentRole))
+            {
+                await _roleManager.CreateAsync(new IdentityRole(studentRole));
+            }
+
+            // ✅ 2) Put this user into Student role
+            var roleResult = await _userManager.AddToRoleAsync(user, studentRole);
+            if (!roleResult.Succeeded)
+            {
+                foreach (var error in roleResult.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
+                // optional: delete user if role assign failed
+                return View(model);
+            }
+
+            // (optional) membership creation here...
+
+            await _signInManager.SignInAsync(user, isPersistent: false);
+            return RedirectToAction("Dashboard", "Student");
+        }
+
+        // =========================
+        //  LOGOUT
+        // =========================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
-            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            await _signInManager.SignOutAsync();
             return RedirectToAction("Login", "Account");
         }
-        // Redirect based on ROLE
-        [AllowAnonymous]
-        public IActionResult AccessDenied(string? returnUrl)
+
+        // optional AccessDenied action
+        [HttpGet]
+        public IActionResult AccessDenied()
         {
-            ViewBag.ReturnUrl = returnUrl;
             return View();
         }
-
-
+        
     }
 }

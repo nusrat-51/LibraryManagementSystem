@@ -1,10 +1,12 @@
-﻿using LibraryManagementSystem.Data;
+﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
+using LibraryManagementSystem.Data;
 using LibraryManagementSystem.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Linq;
+
 
 namespace LibraryManagementSystem.Controllers
 {
@@ -21,55 +23,85 @@ namespace LibraryManagementSystem.Controllers
         // ========================
         //  STUDENT DASHBOARD
         // ========================
-        public IActionResult Dashboard()
+        [HttpGet]
+        public async Task<IActionResult> Dashboard()
         {
-            var email = User.Identity?.Name ?? string.Empty;
+            var email = User.Identity?.Name;
+            if (string.IsNullOrEmpty(email))
+            {
+                return Unauthorized();
+            }
 
-            // Student-er active issues (not returned)
-            var currentIssues = _context.IssueRecords
+            // Friendly name from email
+            var userNamePart = email.Split('@')[0];
+            var friendlyName = char.ToUpper(userNamePart[0]) + userNamePart.Substring(1);
+
+            // 1) Load membership from DB for this student
+            var membership = await _context.Memberships
+                .FirstOrDefaultAsync(m => m.StudentEmail == email && m.IsActive);
+
+            bool isPremium = membership?.MembershipType == "Premium";
+
+            var today = DateTime.UtcNow.Date;
+
+            // All issue records for this student
+            var studentIssuesQuery = _context.IssueRecords
                 .Include(i => i.Book)
-                .Where(i => i.StudentEmail == email && i.Status == "Issued")
-                .ToList();
+                .Where(i => i.StudentEmail == email);
 
-            // overdue: 14 din er beshi (example)
+            // Current issued (not returned)
+            var currentIssues = await studentIssuesQuery
+                .Where(i => i.Status == "Issued")
+                .ToListAsync();
+
+            // Overdue: more than 14 days and not returned
             var overdueCount = currentIssues.Count(i =>
                 !i.ReturnDate.HasValue &&
-                i.IssueDate.AddDays(14) < DateTime.Today);
+                i.IssueDate.AddDays(14).Date < today);
 
-            // premium collection preview (just sample)
-            var premiumSample = _context.Books
-                .Where(b => b.Category == "Premium")
-                .Take(3)
-                .ToList();
+            // Total books in library
+            var totalBooksCount = await _context.Books.CountAsync();
 
-            // total unpaid fine (Fine table theke)
-            var totalUnpaidFine = _context.Fines
+            // Total unpaid fine for this student
+            var totalUnpaidFine = await _context.Fines
                 .Where(f => f.StudentEmail == email && !f.IsPaid)
-                .Sum(f => (decimal?)f.Amount) ?? 0m;
+                .SumAsync(f => (decimal?)f.Amount) ?? 0m;
+
+            // Recent issues (latest 5)
+            var recentIssues = await studentIssuesQuery
+                .OrderByDescending(i => i.IssueDate)
+                .Take(5)
+                .ToListAsync();
+
+            // Premium books sample (first 3 premium category)
+            var premiumBooksSample = await _context.Books
+                .Where(b => b.Category == "Premium")
+                .OrderBy(b => b.Title)
+                .Take(3)
+                .ToListAsync();
 
             var vm = new StudentDashboardViewModel
             {
-                StudentName = email,
+                // Identity info
+                StudentName = friendlyName,
                 Email = email,
 
-                // membership info (later DB theke asbe)
-                MembershipType = "Normal",
-                IsMembershipActive = true,
-                HasPremiumAccess = false,
+                // Membership info from DB (with safe defaults)
+                MembershipType = membership?.MembershipType ?? "Standard",
+                IsMembershipActive = membership?.IsActive ?? false,
+                HasPremiumAccess = isPremium,
+                MembershipBarcode = membership?.MembershipBarcode ?? "Not assigned",
+                MembershipExpiry = membership?.ExpiryDate,
 
-                // summary cards
+                // Summary cards
                 CurrentIssuedCount = currentIssues.Count,
                 OverdueCount = overdueCount,
-                TotalBooksCount = _context.Books.Count(),
+                TotalBooksCount = totalBooksCount,
                 TotalUnpaidFine = totalUnpaidFine,
 
-                // tables
-                RecentIssues = currentIssues
-                    .OrderByDescending(i => i.IssueDate)
-                    .Take(5)
-                    .ToList(),
-
-                PremiumBooksSample = premiumSample
+                // Tables
+                RecentIssues = recentIssues,
+                PremiumBooksSample = premiumBooksSample
             };
 
             return View(vm);
@@ -78,16 +110,20 @@ namespace LibraryManagementSystem.Controllers
         // ========================
         //  MY ISSUED BOOKS
         // ========================
-        // GET: /Student/MyIssues
-        public IActionResult MyIssues()
+        [HttpGet]
+        public async Task<IActionResult> MyIssues()
         {
-            var email = User.Identity?.Name ?? string.Empty;
+            var email = User.Identity?.Name;
+            if (string.IsNullOrEmpty(email))
+            {
+                return Unauthorized();
+            }
 
-            var issues = _context.IssueRecords
+            var issues = await _context.IssueRecords
                 .Include(i => i.Book)
                 .Where(i => i.StudentEmail == email)
                 .OrderByDescending(i => i.IssueDate)
-                .ToList();
+                .ToListAsync();
 
             return View(issues);
         }
@@ -95,12 +131,12 @@ namespace LibraryManagementSystem.Controllers
         // ========================
         //  VIEW BOOKS (READ-ONLY)
         // ========================
-        // GET: /Student/ViewBooks
-        public IActionResult ViewBooks()
+        [HttpGet]
+        public async Task<IActionResult> ViewBooks()
         {
-            var books = _context.Books
+            var books = await _context.Books
                 .OrderBy(b => b.Title)
-                .ToList();
+                .ToListAsync();
 
             return View(books);
         }
@@ -108,21 +144,26 @@ namespace LibraryManagementSystem.Controllers
         // =========================
         //  PAY FINE PAGE (GET)
         // =========================
-        public IActionResult PayFine()
+        [HttpGet]
+        public async Task<IActionResult> PayFine()
         {
-            var email = User.Identity?.Name ?? string.Empty;
+            var email = User.Identity?.Name;
+            if (string.IsNullOrEmpty(email))
+            {
+                return Unauthorized();
+            }
 
-            var unpaid = _context.Fines
+            var unpaid = await _context.Fines
                 .Include(f => f.IssueRecord)
                     .ThenInclude(ir => ir.Book)
                 .Where(f => f.StudentEmail == email && !f.IsPaid)
-                .ToList();
+                .ToListAsync();
 
-            var paid = _context.Fines
+            var paid = await _context.Fines
                 .Where(f => f.StudentEmail == email && f.IsPaid)
                 .OrderByDescending(f => f.PaidOn)
                 .Take(10)
-                .ToList();
+                .ToListAsync();
 
             var vm = new PayFineViewModel
             {
@@ -139,12 +180,18 @@ namespace LibraryManagementSystem.Controllers
         // =========================
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult PayFineOnline(int id)
+        public async Task<IActionResult> PayFineOnline(int id)
         {
-            var email = User.Identity?.Name ?? string.Empty;
+            var email = User.Identity?.Name;
+            if (string.IsNullOrEmpty(email))
+            {
+                return Unauthorized();
+            }
 
-            var fine = _context.Fines
-                .FirstOrDefault(f => f.Id == id && f.StudentEmail == email && !f.IsPaid);
+            var fine = await _context.Fines
+                .FirstOrDefaultAsync(f => f.Id == id &&
+                                          f.StudentEmail == email &&
+                                          !f.IsPaid);
 
             if (fine == null)
             {
@@ -153,10 +200,10 @@ namespace LibraryManagementSystem.Controllers
 
             // ---- Mock online payment gateway ----
             fine.IsPaid = true;
-            fine.PaidOn = DateTime.Now;
+            fine.PaidOn = DateTime.UtcNow;
             fine.PaymentReference = "PAY-" + Guid.NewGuid().ToString("N").Substring(0, 8);
 
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
 
             TempData["FinePaidMessage"] =
                 $"Fine #{fine.Id} paid successfully (Ref: {fine.PaymentReference}).";
@@ -167,13 +214,71 @@ namespace LibraryManagementSystem.Controllers
         // =========================
         //  PREMIUM COLLECTION PAGE
         // =========================
-        public IActionResult PremiumCollection()
+        [HttpGet]
+        public async Task<IActionResult> PremiumCollection()
         {
-            var premiumBooks = _context.Books
+            var premiumBooks = await _context.Books
                 .Where(b => b.Category == "Premium")
-                .ToList();
+                .OrderBy(b => b.Title)
+                .ToListAsync();
 
             return View(premiumBooks);
         }
+        // =========================
+        //  UPGRADE MEMBERSHIP (MOCK)
+        // =========================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpgradeToPremium()
+        {
+            var email = User.Identity?.Name;
+            if (string.IsNullOrEmpty(email))
+            {
+                return Unauthorized();
+            }
+
+            // Find existing active membership (if any)
+            var membership = await _context.Memberships
+                .FirstOrDefaultAsync(m => m.StudentEmail == email);
+
+            if (membership == null)
+            {
+                // Create a new membership row if it doesn't exist
+                membership = new Membership
+                {
+                    StudentEmail = email,
+                    MembershipType = "Premium",
+                    IsActive = true,
+                    MembershipBarcode = GenerateMembershipBarcode(),
+                    ExpiryDate = DateTime.Today.AddYears(1),   // 1 year validity
+                   
+                };
+
+                _context.Memberships.Add(membership);
+            }
+            else
+            {
+                // Upgrade existing membership
+                membership.MembershipType = "Premium";
+                membership.IsActive = true;
+                membership.MembershipBarcode = GenerateMembershipBarcode();
+                membership.ExpiryDate = DateTime.Today.AddYears(1);
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["MembershipMessage"] = "Your membership has been upgraded to Premium.";
+            return RedirectToAction(nameof(Dashboard));
+        }
+
+        // Simple helper to generate a fake barcode/id
+        private string GenerateMembershipBarcode()
+        {
+            // Example: LM-2025-123456
+            var random = new Random();
+            var number = random.Next(100000, 999999);
+            return $"LM-{DateTime.Now:yyyy}-{number}";
+        }
+
     }
 }

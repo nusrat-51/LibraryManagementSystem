@@ -21,25 +21,12 @@
         @foreach (var issue in Model)
         {
             <tr>
-                <td>@issue.Book?.Title (@issue.BookId)</td>
-                <td>@issue.IssueDate.ToShortDateString()</td>
+                <td>@issue.Book?.Title</td>
+                <td>@issue.IssueDate.ToString("dd MMM yyyy")</td>
                 <td>@issue.Status</td>
+                <td>@(issue.ReturnDate?.ToString("dd MMM yyyy") ?? "-")</td>
                 <td>
-                    @(issue.ReturnDate.HasValue
-                                    ? issue.ReturnDate.Value.ToShortDateString()
-                                    : "Not Returned")
-                </td>
-                <td>
-                    @if (issue.Status == "Issued")
-                    {
-                        <form method="post" action="/Issue/ReturnBook?issueId=@issue.Id">
-                            <button class="btn btn-warning btn-sm">Return</button>
-                        </form>
-                    }
-                    else
-                    {
-                        <span class="text-success">Returned</span>
-                    }
+                    @* later you can add "Details" or "Renew" buttons *@
                 </td>
             </tr>
         }

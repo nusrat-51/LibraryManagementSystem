@@ -1,40 +1,19 @@
 ﻿using System;
-using System.ComponentModel.DataAnnotations;
 
-namespace YourNamespace.Models
+namespace LibraryManagementSystem.Models
 {
     public class Membership
     {
         public int Id { get; set; }
 
-        [Required]
-        [EmailAddress]
-        public string StudentEmail { get; set; } = default!;
+        public string UserId { get; set; } = string.Empty;  // Identity user id
+        public string StudentEmail { get; set; } = string.Empty;
 
-        // E.g. "Premium", "Standard" – for now you mainly care about Premium
-        [Required]
-        [MaxLength(50)]
-        public string PlanName { get; set; } = "Premium";
+        public string MembershipType { get; set; } = "Standard";  // Standard / Premium
+        public bool IsActive { get; set; } = true;
+        public DateTime StartDate { get; set; } = DateTime.UtcNow;
+        public DateTime? ExpiryDate { get; set; } = DateTime.UtcNow.AddYears(1);
 
-        // Validity
-        [Required]
-        public DateTime StartDate { get; set; }
-
-        [Required]
-        public DateTime EndDate { get; set; }
-
-        [Required]
-        public MembershipStatus Status { get; set; } = MembershipStatus.Pending;
-
-        // Payment tracking (can be extended later with real gateways)
-        [Range(0, double.MaxValue)]
-        public decimal AmountPaid { get; set; }
-
-        [MaxLength(100)]
-        public string? PaymentReference { get; set; }
-
-        // Audit fields
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public DateTime? ApprovedAt { get; set; }
+        public string? MembershipBarcode { get; set; }
     }
 }

@@ -1,0 +1,64 @@
+﻿@model LibraryManagementSystem.Models.RegisterViewModel
+@{
+    Layout = null;
+}
+
+<link rel="stylesheet" href="~/css/login.css" />
+
+<div class="login-page">
+    <div class="login-card">
+        <div class="login-icon">📚</div>
+        <h2 class="login-title">Student Registration</h2>
+        <p class="login-subtitle">Create your library account</p>
+
+        <form asp-action="Register" asp-controller="Account" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <div class="form-row">
+                <label asp-for="FullName"></label>
+                <input asp-for="FullName" />
+                <span asp-validation-for="FullName" class="text-danger"></span>
+            </div>
+
+            <div class="form-row">
+                <label asp-for="Email"></label>
+                <input asp-for="Email" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+
+            <div class="form-row">
+                <label asp-for="Password"></label>
+                <input asp-for="Password" type="password" />
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+
+            <div class="form-row">
+                <label asp-for="ConfirmPassword"></label>
+                <input asp-for="ConfirmPassword" type="password" />
+                <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+            </div>
+
+            <div class="form-row">
+                <label asp-for="MembershipType">Membership Type</label>
+                <select asp-for="MembershipType">
+                    <option value="Standard">Standard</option>
+                    <option value="Premium">Premium</option>
+                </select>
+                <span asp-validation-for="MembershipType" class="text-danger"></span>
+            </div>
+
+            <div class="form-row">
+                <button type="submit" class="btn-primary">Register</button>
+            </div>
+        </form>
+
+        <p class="login-footer">
+            Already registered?
+            <a asp-action="Login" asp-controller="Account">Back to Login</a>
+        </p>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

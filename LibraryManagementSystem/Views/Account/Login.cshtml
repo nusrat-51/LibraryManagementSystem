@@ -15,21 +15,23 @@
             <div class="form-row">
                 <label>Email</label>
                 <input asp-for="Email" type="email" placeholder="Enter email" required />
-
+                <span asp-validation-for="Email" class="text-danger"></span>
             </div>
 
             <div class="form-row">
                 <label>Password</label>
-                <input asp-for="Password" type="password" placeholder="Enter password" />
+                <input asp-for="Password" type="password" placeholder="Enter password" required />
+                <span asp-validation-for="Password" class="text-danger"></span>
             </div>
 
             <div class="form-row">
                 <label>Login as</label>
-                <select asp-for="Role">
+                <select asp-for="LoginAs">
                     <option value="Admin">Admin</option>
                     <option value="Librarian">Librarian</option>
                     <option value="Student">Student</option>
                 </select>
+                <span asp-validation-for="LoginAs" class="text-danger"></span>
             </div>
 
             <div class="form-row">
@@ -40,6 +42,11 @@
                 @Html.ValidationSummary()
             </div>
         </form>
+        <p class="login-footer">
+            New student?
+            <a asp-action="Register" asp-controller="Account">Create an account</a>
+        </p>
+
 
         <p class="login-footer">© 2025 Library Management System</p>
     </div>

@@ -5,15 +5,18 @@ namespace LibraryManagementSystem.Models
 {
     public class StudentDashboardViewModel
     {
-        // Basic info
+        // Identity info
         public string StudentName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
 
         // Membership info
-        public string MembershipType { get; set; } = "None"; // None / Normal / Premium
+        public string MembershipType { get; set; } = "Normal";   // Normal / Premium
+        public bool IsMembershipActive { get; set; } = true;
+        public bool HasPremiumAccess { get; set; } = false;
+
+        // NEW: these are used in Dashboard.cshtml
         public string? MembershipBarcode { get; set; }
         public DateTime? MembershipExpiry { get; set; }
-        public bool IsMembershipActive { get; set; }
 
         // Summary cards
         public int CurrentIssuedCount { get; set; }
@@ -21,11 +24,10 @@ namespace LibraryManagementSystem.Models
         public int TotalBooksCount { get; set; }
         public decimal TotalUnpaidFine { get; set; }
 
-        // Premium access
-        public bool HasPremiumAccess { get; set; }
-        public List<Book> PremiumBooksSample { get; set; } = new();
+        // Recent issued books table
         public List<IssueRecord> RecentIssues { get; set; } = new();
-        public bool IsPremium { get; set; }
 
+        // Premium collection preview
+        public List<Book> PremiumBooksSample { get; set; } = new();
     }
 }

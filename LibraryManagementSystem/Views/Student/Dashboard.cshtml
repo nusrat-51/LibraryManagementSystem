@@ -1,249 +1,226 @@
 ﻿@model LibraryManagementSystem.Models.StudentDashboardViewModel
 
 @{
-    Layout = null;
+    ViewData["Title"] = "Student Dashboard";
+    Layout = "_StudentLayout";
 }
 
-<link rel="stylesheet" href="~/css/dashboard.css" />
+@if (TempData["MembershipMessage"] != null)
+{
+    <div class="sd-section-card" style="margin-top: 8px; background:#ecfdf5; border-color:#bbf7d0;">
+        <span style="font-size:13px; color:#166534;">
+            @TempData["MembershipMessage"]
+        </span>
+    </div>
+}
 
-<div class="layout">
+<div class="sd-page">
+    <div class="sd-container">
+        <h1 class="sd-header-title">Student Dashboard</h1>
+        <p class="sd-header-sub">
+            Welcome, @Model.StudentName (@Model.Email)
+        </p>
 
-    <!-- SIDEBAR -->
-    <aside class="sidebar">
-        <div class="brand">
-            <span class="brand-logo">📚</span>
-            <span class="brand-name">LMS</span>
-        </div>
+        <!-- Membership card -->
+        <div class="sd-card-main">
+            <div class="sd-membership-grid">
+                <div>
+                    <div class="sd-membership-title">Membership</div>
 
-        <nav class="menu">
-            <a href="/Student/Dashboard" class="menu-item active">Dashboard</a>
-            <a href="/Student/MyIssues" class="menu-item">My Issued Books</a>
-            <a href="/Student/ViewBooks" class="menu-item">View Books (read-only)</a>
-            <a href="/Account/Logout" class="menu-item">Logout</a>
-        </nav>
-    </aside>
+                    <p><strong>Email:</strong> @Model.Email</p>
 
-    <!-- MAIN AREA -->
-    <div class="main">
-
-        <!-- TOP BAR -->
-        <header class="topbar">
-            <h1 class="page-title">Student Dashboard</h1>
-
-            <div class="topbar-right">
-                <div class="search-box">
-                    <input type="text" placeholder="Search books..." />
-                </div>
-                <div class="user-badge">
-                    <div class="avatar">S</div>
-                    <div class="user-info">
-                        <span class="user-name">@Model.StudentName</span>
-                        <span class="user-role">Student</span>
-                    </div>
-                </div>
-            </div>
-        </header>
-
-        <!-- CONTENT -->
-        <main class="content">
-
-            <!-- MEMBERSHIP CARD -->
-            <section class="grid-two" style="margin-bottom: 1.5rem;">
-                <div class="panel" style="max-width: 420px;">
-                    <div class="panel-header">
-                        <h2>Membership Card</h2>
-                    </div>
-                    <div class="table-wrapper" style="padding:1rem 1.5rem;">
-                        <p><strong>Type:</strong> @Model.MembershipType</p>
-                        <p>
-                            <strong>Status:</strong>
-                            @if (Model.IsMembershipActive)
-                            {
-                                <span class="badge success">Active</span>
-                            }
-                            else
-                            {
-                                <span class="badge danger">Inactive</span>
-                            }
-                        </p>
-
-                        @if (!string.IsNullOrEmpty(Model.MembershipBarcode))
+                    <p>
+                        <strong>Type:</strong>
+                        @if (Model.MembershipType == "Premium")
                         {
-                            <p><strong>Barcode:</strong> @Model.MembershipBarcode</p>
-                        }
-
-                        @if (Model.MembershipExpiry.HasValue)
-                        {
-                            <p><strong>Valid till:</strong> @Model.MembershipExpiry.Value.ToShortDateString()</p>
-                        }
-
-                        @if (!Model.HasPremiumAccess)
-                        {
-                            <p style="margin-top:0.5rem;">
-                                Premium collection access unavailable.
-                                <br />Please contact librarian to upgrade membership.
-                            </p>
+                            <span class="sd-badge sd-badge-premium">Premium</span>
                         }
                         else
                         {
-                            <p style="margin-top:0.5rem;">
-                                You have <strong>Premium</strong> access.
-                                You can borrow books from premium collection.
-                            </p>
+                            <span class="sd-badge sd-badge-standard">
+                                @Model.MembershipType
+                            </span>
+                        }
+                    </p>
+
+                    <p>
+                        <strong>Status:</strong>
+                        @if (Model.IsMembershipActive)
+                        {
+                            <span class="sd-badge sd-badge-active">Active</span>
+                        }
+                        else
+                        {
+                            <span class="sd-badge sd-badge-inactive">Inactive</span>
+                        }
+                    </p>
+
+                    @if (Model.MembershipType == "Standard")
+                    {
+                        <form asp-action="UpgradeToPremium"
+                              asp-controller="Student"
+                              method="post"
+                              class="sd-upgrade-form">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="sd-btn-soft sd-btn-upgrade">
+                                Upgrade to Premium
+                            </button>
+                        </form>
+                    }
+                </div>
+
+                <div>
+                    <div class="sd-barcode-box">
+                        <div class="sd-barcode-label">Membership ID / Barcode</div>
+                        <div class="sd-barcode-value">
+                            @Model.MembershipBarcode
+                        </div>
+                        <div class="sd-expiry">
+                            Expiry:
+                            @if (Model.MembershipExpiry.HasValue)
+                            {
+                                @Model.MembershipExpiry.Value.ToString("dd MMM yyyy")
+                            }
+                            else
+                            {
+                                @:N/A
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats row -->
+        <div class="sd-stats-row">
+            <div class="sd-stat-card">
+                <div class="sd-stat-label">Current Issued</div>
+                <div class="sd-stat-value">@Model.CurrentIssuedCount</div>
+            </div>
+
+            <div class="sd-stat-card">
+                <div class="sd-stat-label">Overdue</div>
+                <div class="sd-stat-value sd-danger">@Model.OverdueCount</div>
+            </div>
+
+            <div class="sd-stat-card">
+                <div class="sd-stat-label">Total Books</div>
+                <div class="sd-stat-value">@Model.TotalBooksCount</div>
+            </div>
+
+            <div class="sd-stat-card">
+                <div class="sd-stat-label">Unpaid Fine</div>
+                <div class="sd-stat-value">
+                    @Model.TotalUnpaidFine.ToString("0.00")
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Issued Books -->
+        <div class="sd-section-card">
+            <div class="sd-section-header">
+                <div>
+                    <div class="sd-section-title">Recent Issued Books</div>
+                    <div class="sd-section-sub">
+                        @if (Model.RecentIssues == null || !Model.RecentIssues.Any())
+                        {
+                            @:You have no issued books yet.
+                        }
+                        else
+                        {
+                            @:Last few books you borrowed.
                         }
                     </div>
                 </div>
+                <a asp-controller="Student"
+                   asp-action="MyIssues"
+                   class="sd-btn-soft">
+                    View All
+                </a>
+            </div>
 
-                <div class="cards">
-                    <div class="card">
-                        <p class="card-label">Books Issued</p>
-                        <p class="card-value">@Model.CurrentIssuedCount</p>
-                        <p class="card-sub">Currently borrowed by you</p>
-                    </div>
-                    <div class="card">
-                        <p class="card-label">Overdue</p>
-                        <p class="card-value danger">@Model.OverdueCount</p>
-                        <p class="card-sub">Need to return soon</p>
-                    </div>
-                    <div class="card">
-                        <p class="card-label">Total Books</p>
-                        <p class="card-value">@Model.TotalBooksCount</p>
-                        <p class="card-sub">Available in library</p>
-                    </div>
-                    <div class="card">
-                        <p class="card-label">Unpaid Fine</p>
-                        <p class="card-value">@Model.TotalUnpaidFine.ToString("0.00")</p>
-                        <p class="card-sub">Click “Pay Fine” to clear</p>
-                    </div>
-                </div>
-            </section>
-
-            <!-- RECENT ISSUES + NOTIFICATIONS / PREMIUM PREVIEW -->
-            <section class="grid-two">
-
-                <!-- Recent issues -->
-                <div class="panel">
-                    <div class="panel-header">
-                        <h2>My Recent Issued Books</h2>
-                        <a href="/Student/MyIssues" class="link-small">View all</a>
-                    </div>
-                    <div class="table-wrapper">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Book</th>
-                                    <th>Issue Date</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @if (Model.RecentIssues.Any())
-                                {
-                                    @foreach (var issue in Model.RecentIssues)
+            @if (Model.RecentIssues == null || !Model.RecentIssues.Any())
+            {
+                <p>You have no issued books yet.</p>
+            }
+            else
+            {
+                <table class="sd-table">
+                    <thead>
+                        <tr>
+                            <th>Book</th>
+                            <th>Issued On</th>
+                            <th>Status</th>
+                            <th>Return Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var issue in Model.RecentIssues)
+                        {
+                            <tr>
+                                <td>@issue.Book?.Title</td>
+                                <td>@issue.IssueDate.ToString("dd MMM yyyy")</td>
+                                <td>@issue.Status</td>
+                                <td>
+                                    @if (issue.ReturnDate.HasValue)
                                     {
-                                        <tr>
-                                            <td>@issue.Book?.Title</td>
-                                            <td>@issue.IssueDate.ToShortDateString()</td>
-                                            <td>@issue.Status</td>
-                                        </tr>
+                                        @issue.ReturnDate.Value.ToString("dd MMM yyyy")
                                     }
-                                }
-                                else
-                                {
-                                    <tr>
-                                        <td colspan="3" style="text-align:center;">No issued books yet.</td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Premium books preview -->
-                <div class="panel">
-                    <div class="panel-header">
-                        <h2>Premium Collection Preview</h2>
-                        <a href="/Student/ViewBooks" class="link-small">View all books</a>
-                    </div>
-                    <div class="table-wrapper">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Title</th>
-                                    <th>Author</th>
-                                    <th>Access</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @if (Model.PremiumBooksSample.Any())
-                                {
-                                    @foreach (var b in Model.PremiumBooksSample)
+                                    else
                                     {
-                                        <tr>
-                                            <td>@b.Title</td>
-                                            <td>@b.Author</td>
-                                            <td>
-                                                @if (Model.HasPremiumAccess)
-                                                {
-                                                    <span class="badge success">Available</span>
-                                                }
-                                                else
-                                                {
-                                                    <span class="badge warning">Premium only</span>
-                                                }
-                                            </td>
-                                        </tr>
+                                        @:--
                                     }
-                                }
-                                else
-                                {
-                                    <tr>
-                                        <td colspan="3" style="text-align:center;">No premium books configured.</td>
-                                    </tr>
-                                }
-                            </tbody>
-                        </table>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+
+        <!-- Premium collection -->
+        <div class="sd-section-card">
+            <div class="sd-section-header">
+                <div>
+                    <div class="sd-section-title">Premium Collection Preview</div>
+                    <div class="sd-section-sub">
+                        A quick look at some premium titles.
                     </div>
                 </div>
+                <a asp-controller="Student"
+                   asp-action="PremiumCollection"
+                   class="sd-btn-soft">
+                    View Premium Collection
+                </a>
+            </div>
 
-            </section>
+            @if (Model.PremiumBooksSample == null || !Model.PremiumBooksSample.Any())
+            {
+                <p>No premium books configured yet.</p>
+            }
+            else
+            {
+                <table class="sd-table">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Author</th>
+                            <th>Category</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var book in Model.PremiumBooksSample)
+                        {
+                            <tr>
+                                <td>@book.Title</td>
+                                <td>@book.Author</td>
+                                <td>@book.Category</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
 
-            <!-- QUICK ACTIONS -->
-            <section class="panel quick-actions">
-                <div class="panel-header">
-                    <h2>Quick Actions</h2>
-                </div>
-                <div class="actions-grid">
-
-                    <a href="/Student/ViewBooks" class="action-card">
-                        <h3>Browse Books</h3>
-                        <p>See all available books in the library.</p>
-                    </a>
-
-                    <a href="/Student/MyIssues" class="action-card">
-                        <h3>My Issued Books</h3>
-                        <p>View and track your borrowed books.</p>
-                    </a>
-
-                    <a href="/Student/PayFine" class="action-card">
-                        <h3>Pay Fine</h3>
-                        <p>Review and pay your pending fines.</p>
-                    </a>
-
-                    <a href="/Student/PremiumCollection" class="action-card">
-                        <h3>Premium Collection</h3>
-                        <p>Explore premium membership benefits.</p>
-                    </a>
-
-                </div>
-
-                 
-            </section>
-
-        </main>
-
-        <footer class="footer">
-            © 2025 Library Management System
-        </footer>
     </div>
 </div>
