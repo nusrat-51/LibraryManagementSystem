@@ -1,4 +1,5 @@
 ﻿using LibraryManagementSystem.Data;
+using LibraryManagementSystem.Models;   // ⭐ REQUIRED for ApplicationUser
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,7 +12,7 @@ builder.Services.AddDbContext<LibraryContext>(options =>
 
 // ------------ IDENTITY ------------
 builder.Services
-    .AddIdentity<IdentityUser, IdentityRole>(options =>
+    .AddIdentity<ApplicationUser, IdentityRole>(options =>       // ⭐ FIXED
     {
         options.Password.RequireDigit = true;
         options.Password.RequireLowercase = true;
@@ -33,7 +34,7 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
 
     var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-    var userManager = services.GetRequiredService<UserManager<IdentityUser>>();
+    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();   // ⭐ FIXED
 
     // 1) Roles
     string[] roleNames = { "Admin", "Librarian", "Student" };
@@ -53,7 +54,7 @@ using (var scope = app.Services.CreateScope())
     var adminUser = await userManager.FindByEmailAsync(adminEmail);
     if (adminUser == null)
     {
-        adminUser = new IdentityUser
+        adminUser = new ApplicationUser
         {
             UserName = adminEmail,
             Email = adminEmail,
@@ -74,7 +75,7 @@ using (var scope = app.Services.CreateScope())
     var librarianUser = await userManager.FindByEmailAsync(librarianEmail);
     if (librarianUser == null)
     {
-        librarianUser = new IdentityUser
+        librarianUser = new ApplicationUser
         {
             UserName = librarianEmail,
             Email = librarianEmail,
@@ -95,7 +96,7 @@ using (var scope = app.Services.CreateScope())
     var studentUser = await userManager.FindByEmailAsync(studentEmail);
     if (studentUser == null)
     {
-        studentUser = new IdentityUser
+        studentUser = new ApplicationUser
         {
             UserName = studentEmail,
             Email = studentEmail,

@@ -3,124 +3,143 @@ using LibraryManagementSystem.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
 
-[Authorize(Roles = "Librarian,Admin")]
-public class LibrarianController : Controller
+namespace LibraryManagementSystem.Controllers
 {
-    private readonly LibraryContext _context;
-
-    public LibrarianController(LibraryContext context)
+    [Authorize(Roles = "Librarian,Admin")]
+    public class LibrarianController : Controller
     {
-        _context = context;
-    }
+        private readonly LibraryContext _context;
 
-    // ========== BOOK LIST (MANAGE) ==========
-    // GET: /Librarian/ManageBooks
-    public async Task<IActionResult> ManageBooks()
-    {
-        var books = await _context.Books
-            .OrderBy(b => b.Title)
-            .ToListAsync();
-
-        return View(books);
-    }
-
-    // ========== CREATE BOOK ==========
-
-    // GET: /Librarian/CreateBook
-    [HttpGet]
-    public IActionResult CreateBook()
-    {
-        return View();
-    }
-
-    // POST: /Librarian/CreateBook
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> CreateBook(Book model)
-    {
-        if (!ModelState.IsValid)
-            return View(model);
-
-        // if AvailableCopies field exists, default it to TotalCopies
-        try
+        public LibrarianController(LibraryContext context)
         {
-            var prop = typeof(Book).GetProperty("AvailableCopies");
-            if (prop != null)
-            {
-                var value = prop.GetValue(model);
-                if (value is int intVal && intVal == 0)
-                {
-                    prop.SetValue(model, model.TotalCopies);
-                }
-            }
+            _context = context;
         }
-        catch { }
 
-        _context.Books.Add(model);
-        await _context.SaveChangesAsync();
+        // ===========================
+        //  DASHBOARD (VIEW ONLY)
+        // ===========================
+        public IActionResult Dashboard()
+        {
+            // Right now just returns the Librarian/Dashboard.cshtml view
+            // Later we can add stats (total books, overdue, etc.) from _context
+            return View();
+        }
 
-        TempData["BookMessage"] = "Book added successfully.";
-        return RedirectToAction(nameof(ManageBooks));
-    }
+        // ===========================
+        //  BOOK LIST PAGE
+        // ===========================
+        public async Task<IActionResult> ManageBooks()
+        {
+            var books = await _context.Books.ToListAsync();
+            return View(books);
+        }
 
-    // ========== EDIT BOOK ==========
+        // ===========================
+        //  CREATE BOOK (GET)
+        // ===========================
+        public IActionResult CreateBook()
+        {
+            return View();
+        }
 
-    // GET: /Librarian/EditBook/5
-    [HttpGet]
-    public async Task<IActionResult> EditBook(int id)
-    {
-        var book = await _context.Books.FindAsync(id);
-        if (book == null)
-            return NotFound();
+        // ===========================
+        //  CREATE BOOK (POST)
+        // ===========================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateBook(Book model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
 
-        return View(book);
-    }
+            // AvailableCopies = TotalCopies initially
+            model.AvailableCopies = model.TotalCopies;
 
-    // POST: /Librarian/EditBook/5
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> EditBook(int id, Book model)
-    {
-        if (id != model.Id)
-            return BadRequest();
+            _context.Books.Add(model);
+            await _context.SaveChangesAsync();
 
-        if (!ModelState.IsValid)
-            return View(model);
+            TempData["Success"] = "Book added successfully!";
+            return RedirectToAction(nameof(ManageBooks));
+        }
 
-        _context.Entry(model).State = EntityState.Modified;
-        await _context.SaveChangesAsync();
+        // ===========================
+        //  EDIT BOOK (GET)
+        // ===========================
+        public async Task<IActionResult> EditBook(int id)
+        {
+            var book = await _context.Books.FindAsync(id);
+            if (book == null) return NotFound();
 
-        TempData["BookMessage"] = "Book updated successfully.";
-        return RedirectToAction(nameof(ManageBooks));
-    }
+            return View(book);
+        }
 
-    // ========== DELETE BOOK ==========
+        // ===========================
+        //  EDIT BOOK (POST)
+        // ===========================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditBook(Book model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
 
-    // GET: /Librarian/DeleteBook/5  (confirmation)
-    [HttpGet]
-    public async Task<IActionResult> DeleteBook(int id)
-    {
-        var book = await _context.Books.FindAsync(id);
-        if (book == null)
-            return NotFound();
+            var book = await _context.Books.FindAsync(model.Id);
+            if (book == null) return NotFound();
 
-        return View(book);
-    }
+            // Update fields
+            book.Title = model.Title;
+            book.Author = model.Author;
+            book.Category = model.Category;
+            book.TotalCopies = model.TotalCopies;
 
-    // POST: /Librarian/DeleteBookConfirmed/5
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeleteBookConfirmed(int id)
-    {
-        var book = await _context.Books.FindAsync(id);
-        if (book == null)
-            return NotFound();
+            // For now, reset AvailableCopies = TotalCopies
+            book.AvailableCopies = model.TotalCopies;
 
-        _context.Books.Remove(book);
-        await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync();
 
-        TempData["BookMessage"] = "Book deleted successfully.";
-        return RedirectToAction(nameof(ManageBooks));
+            TempData["Success"] = "Book updated successfully!";
+            return RedirectToAction(nameof(ManageBooks));
+        }
+
+        // ===========================
+        //  DELETE BOOK (GET)
+        // ===========================
+        public async Task<IActionResult> DeleteBook(int id)
+        {
+            var book = await _context.Books.FindAsync(id);
+            if (book == null) return NotFound();
+
+            return View(book);
+        }
+
+        // ===========================
+        //  DELETE BOOK (POST)
+        // ===========================
+        [HttpPost, ActionName("DeleteBook")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
+        {
+            var book = await _context.Books.FindAsync(id);
+            if (book == null) return NotFound();
+
+            _context.Books.Remove(book);
+            await _context.SaveChangesAsync();
+
+            TempData["Success"] = "Book deleted successfully!";
+            return RedirectToAction(nameof(ManageBooks));
+        }
+
+        // ===========================
+        //  BOOK DETAILS
+        // ===========================
+        public async Task<IActionResult> BookDetails(int id)
+        {
+            var book = await _context.Books.FindAsync(id);
+            if (book == null) return NotFound();
+
+            return View(book);
+        }
     }
 }

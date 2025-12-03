@@ -1,0 +1,15 @@
+﻿@model LibraryManagementSystem.Models.Book
+
+<h2>Book Details</h2>
+
+<table class="table table-bordered">
+    <tr><th>ID</th><td>@Model.Id</td></tr>
+    <tr><th>Title</th><td>@Model.Title</td></tr>
+    <tr><th>Author</th><td>@Model.Author</td></tr>
+    <tr><th>Category</th><td>@Model.Category</td></tr>
+    <tr><th>Total Copies</th><td>@Model.TotalCopies</td></tr>
+    <tr><th>Available Copies</th><td>@Model.AvailableCopies</td></tr>
+</table>
+
+<a class="btn btn-warning" asp-action="EditBook" asp-route-id="@Model.Id">Edit</a>
+<a class="btn btn-secondary" asp-action="ManageBooks">Back</a>

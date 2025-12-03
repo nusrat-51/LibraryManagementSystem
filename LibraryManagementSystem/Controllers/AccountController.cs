@@ -9,15 +9,15 @@ namespace LibraryManagementSystem.Controllers
 {
     public class AccountController : Controller
     {
-        // 🔹 Use IdentityUser here
-        private readonly SignInManager<IdentityUser> _signInManager;
-        private readonly UserManager<IdentityUser> _userManager;
+        // 🔹 Use ApplicationUser everywhere
+        private readonly SignInManager<ApplicationUser> _signInManager;
+        private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly LibraryContext _context;
 
         public AccountController(
-            SignInManager<IdentityUser> signInManager,
-            UserManager<IdentityUser> userManager,
+            SignInManager<ApplicationUser> signInManager,
+            UserManager<ApplicationUser> userManager,
             RoleManager<IdentityRole> roleManager,
             LibraryContext context)
         {
@@ -106,8 +106,8 @@ namespace LibraryManagementSystem.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
-            // 🔹 Use IdentityUser here as well
-            var user = new IdentityUser
+            // 🔹 use ApplicationUser here
+            var user = new ApplicationUser
             {
                 UserName = model.Email,
                 Email = model.Email,
@@ -143,7 +143,7 @@ namespace LibraryManagementSystem.Controllers
                 return View(model);
             }
 
-            // (optional) create Membership row here later if you want
+            // (optional) create Membership row here later
 
             await _signInManager.SignInAsync(user, isPersistent: false);
             return RedirectToAction("Dashboard", "Student");

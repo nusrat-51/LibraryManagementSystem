@@ -1,60 +1,40 @@
 ﻿@model IEnumerable<LibraryManagementSystem.Models.Book>
 
-@{
-    ViewData["Title"] = "Manage Books";
-}
+<h2>Manage Books</h2>
 
-<h1>Manage Books</h1>
-
-@if (TempData["BookMessage"] != null)
+@if (TempData["Success"] != null)
 {
-    <div class="alert alert-success">
-        @TempData["BookMessage"]
-    </div>
+    <div class="alert alert-success">@TempData["Success"]</div>
 }
 
-<p>
-    <a asp-action="CreateBook" class="btn btn-primary">Add New Book</a>
-</p>
+<a class="btn btn-primary mb-3" asp-action="CreateBook">+ Add New Book</a>
 
-<table class="table table-striped">
+<table class="table table-bordered table-striped">
     <thead>
         <tr>
-            <th>Id</th>
+            <th>ID</th>
             <th>Title</th>
             <th>Author</th>
             <th>Category</th>
             <th>Total Copies</th>
-            <th>Available</th>
-            <th></th>
+            <th>Available Copies</th>
+            <th>Actions</th>
         </tr>
     </thead>
     <tbody>
-        @foreach (var book in Model)
+        @foreach (var b in Model)
         {
             <tr>
-                <td>@book.Id</td>
-                <td>@book.Title</td>
-                <td>@book.Author</td>
-                <td>@book.Category</td>
-                <td>@book.TotalCopies</td>
+                <td>@b.Id</td>
+                <td>@b.Title</td>
+                <td>@b.Author</td>
+                <td>@b.Category</td>
+                <td>@b.TotalCopies</td>
+                <td>@b.AvailableCopies</td>
                 <td>
-                    @{
-                        // use AvailableCopies if you have it, otherwise show TotalCopies
-                        var availableProp = book.GetType().GetProperty("AvailableCopies");
-                        var available = availableProp != null
-                        ? (int)availableProp.GetValue(book)!
-                        : book.TotalCopies;
-                    }
-                    @available
-                </td>
-                <td>
-                    <a asp-action="EditBook" asp-route-id="@book.Id" class="btn btn-sm btn-secondary">
-                        Edit
-                    </a>
-                    <a asp-action="DeleteBook" asp-route-id="@book.Id" class="btn btn-sm btn-danger">
-                        Delete
-                    </a>
+                    <a class="btn btn-sm btn-info" asp-action="BookDetails" asp-route-id="@b.Id">Details</a>
+                    <a class="btn btn-sm btn-warning" asp-action="EditBook" asp-route-id="@b.Id">Edit</a>
+                    <a class="btn btn-sm btn-danger" asp-action="DeleteBook" asp-route-id="@b.Id">Delete</a>
                 </td>
             </tr>
         }
