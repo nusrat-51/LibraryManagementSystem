@@ -1,18 +1,23 @@
 ﻿using LibraryManagementSystem.Data;
-using LibraryManagementSystem.Models;   // ⭐ REQUIRED for ApplicationUser
+using LibraryManagementSystem.Models;   // REQUIRED for ApplicationUser
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ------------ DB CONTEXT ------------
+// =========================
+// DATABASE CONFIG
+// =========================
 builder.Services.AddDbContext<LibraryContext>(options =>
     options.UseSqlServer(
         builder.Configuration.GetConnectionString("LibraryConnection")));
 
-// ------------ IDENTITY ------------
+
+// =========================
+// IDENTITY CONFIG
+// =========================
 builder.Services
-    .AddIdentity<ApplicationUser, IdentityRole>(options =>       // ⭐ FIXED
+    .AddIdentity<ApplicationUser, IdentityRole>(options =>
     {
         options.Password.RequireDigit = true;
         options.Password.RequireLowercase = true;
@@ -23,33 +28,35 @@ builder.Services
     .AddEntityFrameworkStores<LibraryContext>()
     .AddDefaultTokenProviders();
 
-// MVC
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
-// ------------ SEED ROLES + USERS ------------
+
+// =========================
+// SEED ROLES + DEFAULT USERS
+// =========================
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
 
     var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();   // ⭐ FIXED
+    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
 
-    // 1) Roles
-    string[] roleNames = { "Admin", "Librarian", "Student" };
+    // ROLES
+    string[] roles = { "Admin", "Librarian", "Student" };
 
-    foreach (var roleName in roleNames)
+    foreach (var role in roles)
     {
-        if (!await roleManager.RoleExistsAsync(roleName))
+        if (!await roleManager.RoleExistsAsync(role))
         {
-            await roleManager.CreateAsync(new IdentityRole(roleName));
+            await roleManager.CreateAsync(new IdentityRole(role));
         }
     }
 
-    // 2) Admin user
+    // ADMIN USER
     var adminEmail = "admin@gmail.com";
-    var adminPassword = "Admin@123";
+    var adminPass = "Admin@123";
 
     var adminUser = await userManager.FindByEmailAsync(adminEmail);
     if (adminUser == null)
@@ -61,37 +68,33 @@ using (var scope = app.Services.CreateScope())
             EmailConfirmed = true
         };
 
-        var result = await userManager.CreateAsync(adminUser, adminPassword);
+        var result = await userManager.CreateAsync(adminUser, adminPass);
         if (result.Succeeded)
-        {
             await userManager.AddToRoleAsync(adminUser, "Admin");
-        }
     }
 
-    // 3) Librarian user
-    var librarianEmail = "librarian@gmail.com";
-    var librarianPassword = "Librarian@123";
+    // LIBRARIAN USER
+    var libEmail = "librarian@gmail.com";
+    var libPass = "Librarian@123";
 
-    var librarianUser = await userManager.FindByEmailAsync(librarianEmail);
-    if (librarianUser == null)
+    var libUser = await userManager.FindByEmailAsync(libEmail);
+    if (libUser == null)
     {
-        librarianUser = new ApplicationUser
+        libUser = new ApplicationUser
         {
-            UserName = librarianEmail,
-            Email = librarianEmail,
+            UserName = libEmail,
+            Email = libEmail,
             EmailConfirmed = true
         };
 
-        var result = await userManager.CreateAsync(librarianUser, librarianPassword);
+        var result = await userManager.CreateAsync(libUser, libPass);
         if (result.Succeeded)
-        {
-            await userManager.AddToRoleAsync(librarianUser, "Librarian");
-        }
+            await userManager.AddToRoleAsync(libUser, "Librarian");
     }
 
-    // 4) Student user
+    // STUDENT USER
     var studentEmail = "student@gmail.com";
-    var studentPassword = "Student@123";
+    var studentPass = "Student@123";
 
     var studentUser = await userManager.FindByEmailAsync(studentEmail);
     if (studentUser == null)
@@ -103,15 +106,16 @@ using (var scope = app.Services.CreateScope())
             EmailConfirmed = true
         };
 
-        var result = await userManager.CreateAsync(studentUser, studentPassword);
+        var result = await userManager.CreateAsync(studentUser, studentPass);
         if (result.Succeeded)
-        {
             await userManager.AddToRoleAsync(studentUser, "Student");
-        }
     }
 }
 
-// ------------ PIPELINE ------------
+
+// =========================
+// MIDDLEWARE PIPELINE
+// =========================
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -126,6 +130,10 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
+
+// =========================
+// DEFAULT ROUTE
+// =========================
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Account}/{action=Login}/{id?}");

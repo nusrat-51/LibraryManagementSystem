@@ -12,12 +12,38 @@
         </div>
 
         <nav class="menu">
-            <a href="/Student/Dashboard" class="menu-item">Dashboard</a>
-            <a href="/Student/MyIssues" class="menu-item">My Issued Books</a>
-            <a href="/Student/ViewBooks" class="menu-item">View Books (read-only)</a>
-            <a href="/Account/Logout" class="menu-item">Logout</a>
+            <a asp-controller="Student"
+               asp-action="Dashboard"
+               class="menu-item">
+                Dashboard
+            </a>
 
+            <a asp-controller="Student"
+               asp-action="MyIssues"
+               class="menu-item">
+                My Issued Books
+            </a>
+
+            <a asp-controller="Student"
+               asp-action="ViewBooks"
+               class="menu-item">
+                View Books (read-only)
+            </a>
+
+            <a asp-controller="Account"
+               asp-action="Logout"
+               class="menu-item">
+                Logout
+            </a>
         </nav>
+
+        <div class="theme-toggle">
+            <span>Theme</span>
+            <br />
+            <button type="button" id="themeToggle">
+                Light / Dark
+            </button>
+        </div>
     </aside>
 
     <div class="main">
@@ -28,3 +54,23 @@
 <footer class="footer">
     © 2025 Library Management System
 </footer>
+
+<script>
+    (function () {
+        const root = document.documentElement;
+        const btn = document.getElementById('themeToggle');
+        if (!btn) return;
+
+        // load saved theme
+        const saved = localStorage.getItem('lms-theme');
+        if (saved === 'dark' || saved === 'light') {
+            root.setAttribute('data-theme', saved);
+        }
+
+        btn.addEventListener('click', function () {
+            const current = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            root.setAttribute('data-theme', current);
+            localStorage.setItem('lms-theme', current);
+        });
+    })();
+</script>

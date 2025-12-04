@@ -1,0 +1,68 @@
+﻿@{
+    Layout = null;
+}
+
+<link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+
+<div class="layout" data-theme="light">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="brand">
+            <span class="brand-logo">📚</span>
+            <span class="brand-name">LMS Admin</span>
+        </div>
+
+        <nav class="menu">
+            <a asp-controller="Admin" asp-action="Dashboard" class="menu-item">
+                Dashboard
+            </a>
+
+            <a asp-controller="Admin" asp-action="Users" class="menu-item">
+                Manage Users
+            </a>
+
+            <a asp-controller="Librarian" asp-action="ManageBooks" class="menu-item">
+                Manage Books
+            </a>
+
+            <a asp-controller="Account" asp-action="Logout" class="menu-item">
+                Logout
+            </a>
+        </nav>
+
+        <hr class="sidebar-divider" />
+
+        <div class="theme-section">
+            <div class="theme-title">Theme</div>
+            <button id="admin-theme-toggle" class="theme-btn">
+                Light / Dark
+            </button>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <div class="main">
+        @RenderBody()
+    </div>
+</div>
+
+<footer class="footer">
+    © 2025 Library Management System
+</footer>
+
+@section Scripts {
+    <script>
+        const layout = document.querySelector('.layout');
+        const themeBtn = document.getElementById('admin-theme-toggle');
+        if (layout && themeBtn) {
+            const saved = localStorage.getItem('lms-theme') || 'light';
+            layout.dataset.theme = saved;
+
+            themeBtn.onclick = () => {
+                const next = layout.dataset.theme === 'light' ? 'dark' : 'light';
+                layout.dataset.theme = next;
+                localStorage.setItem('lms-theme', next);
+            };
+        }
+    </script>
+}

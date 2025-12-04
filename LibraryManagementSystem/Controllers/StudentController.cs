@@ -3,10 +3,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using LibraryManagementSystem.Data;
 using LibraryManagementSystem.Models;
+using LibraryManagementSystem.ViewModels.Student; // for MyIssueVM
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-
 
 namespace LibraryManagementSystem.Controllers
 {
@@ -36,7 +36,7 @@ namespace LibraryManagementSystem.Controllers
             var userNamePart = email.Split('@')[0];
             var friendlyName = char.ToUpper(userNamePart[0]) + userNamePart.Substring(1);
 
-            // 1) Load membership from DB for this student
+            // Membership from DB
             var membership = await _context.Memberships
                 .FirstOrDefaultAsync(m => m.StudentEmail == email && m.IsActive);
 
@@ -62,7 +62,7 @@ namespace LibraryManagementSystem.Controllers
             // Total books in library
             var totalBooksCount = await _context.Books.CountAsync();
 
-            // Total unpaid fine for this student
+            // Total unpaid fine
             var totalUnpaidFine = await _context.Fines
                 .Where(f => f.StudentEmail == email && !f.IsPaid)
                 .SumAsync(f => (decimal?)f.Amount) ?? 0m;
@@ -86,7 +86,7 @@ namespace LibraryManagementSystem.Controllers
                 StudentName = friendlyName,
                 Email = email,
 
-                // Membership info from DB (with safe defaults)
+                // Membership info
                 MembershipType = membership?.MembershipType ?? "Standard",
                 IsMembershipActive = membership?.IsActive ?? false,
                 HasPremiumAccess = isPremium,
@@ -123,9 +123,18 @@ namespace LibraryManagementSystem.Controllers
                 .Include(i => i.Book)
                 .Where(i => i.StudentEmail == email)
                 .OrderByDescending(i => i.IssueDate)
+                .Select(i => new MyIssueVM
+                {
+                    BookTitle = i.Book.Title,
+                    StudentEmail = i.StudentEmail,
+                    IssueDate = i.IssueDate,
+                    ReturnDate = i.ReturnDate,
+                    Status = i.Status,
+                    FineAmount = i.FineAmount
+                })
                 .ToListAsync();
 
-            return View(issues);
+            return View(issues); // Views/Student/MyIssues.cshtml
         }
 
         // ========================
@@ -138,7 +147,7 @@ namespace LibraryManagementSystem.Controllers
                 .OrderBy(b => b.Title)
                 .ToListAsync();
 
-            return View(books);
+            return View(books); // Views/Student/ViewBooks.cshtml
         }
 
         // =========================
@@ -198,7 +207,7 @@ namespace LibraryManagementSystem.Controllers
                 return NotFound();
             }
 
-            // ---- Mock online payment gateway ----
+            // Mock payment
             fine.IsPaid = true;
             fine.PaidOn = DateTime.UtcNow;
             fine.PaymentReference = "PAY-" + Guid.NewGuid().ToString("N").Substring(0, 8);
@@ -224,8 +233,9 @@ namespace LibraryManagementSystem.Controllers
 
             return View(premiumBooks);
         }
+
         // =========================
-        //  UPGRADE MEMBERSHIP (MOCK)
+        //  UPGRADE MEMBERSHIP
         // =========================
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -237,28 +247,24 @@ namespace LibraryManagementSystem.Controllers
                 return Unauthorized();
             }
 
-            // Find existing active membership (if any)
             var membership = await _context.Memberships
                 .FirstOrDefaultAsync(m => m.StudentEmail == email);
 
             if (membership == null)
             {
-                // Create a new membership row if it doesn't exist
                 membership = new Membership
                 {
                     StudentEmail = email,
                     MembershipType = "Premium",
                     IsActive = true,
                     MembershipBarcode = GenerateMembershipBarcode(),
-                    ExpiryDate = DateTime.Today.AddYears(1),   // 1 year validity
-                   
+                    ExpiryDate = DateTime.Today.AddYears(1),
                 };
 
                 _context.Memberships.Add(membership);
             }
             else
             {
-                // Upgrade existing membership
                 membership.MembershipType = "Premium";
                 membership.IsActive = true;
                 membership.MembershipBarcode = GenerateMembershipBarcode();
@@ -271,14 +277,35 @@ namespace LibraryManagementSystem.Controllers
             return RedirectToAction(nameof(Dashboard));
         }
 
-        // Simple helper to generate a fake barcode/id
         private string GenerateMembershipBarcode()
         {
-            // Example: LM-2025-123456
             var random = new Random();
             var number = random.Next(100000, 999999);
             return $"LM-{DateTime.Now:yyyy}-{number}";
         }
+    }
 
+    // View-model for dashboard NOW LIVES HERE
+    public class StudentDashboardViewModel
+    {
+        public string StudentName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+
+        public string MembershipType { get; set; } = "Standard";
+        public bool IsMembershipActive { get; set; }
+        public bool HasPremiumAccess { get; set; }
+        public string MembershipBarcode { get; set; } = "Not assigned";
+        public DateTime? MembershipExpiry { get; set; }
+
+        public int CurrentIssuedCount { get; set; }
+        public int OverdueCount { get; set; }
+        public int TotalBooksCount { get; set; }
+        public decimal TotalUnpaidFine { get; set; }
+
+        public System.Collections.Generic.IList<IssueRecord> RecentIssues { get; set; }
+            = new System.Collections.Generic.List<IssueRecord>();
+
+        public System.Collections.Generic.IList<Book> PremiumBooksSample { get; set; }
+            = new System.Collections.Generic.List<Book>();
     }
 }

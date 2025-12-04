@@ -1,8 +1,10 @@
-﻿@model IEnumerable<LibraryManagementSystem.Models.IssueRecord>
+﻿@@model IEnumerable<LibraryManagementSystem.ViewModels.Student.MyIssueVM>
 
 @{
+    Layout = "~/Views/Shared/_StudentLayout.cshtml";
     ViewData["Title"] = "My Issued Books";
 }
+
 
 <h2>My Issued Books</h2>
 
@@ -17,18 +19,15 @@
         </tr>
     </thead>
 
-    <tbody>
-        @foreach (var issue in Model)
-        {
-            <tr>
-                <td>@issue.Book?.Title</td>
-                <td>@issue.IssueDate.ToString("dd MMM yyyy")</td>
-                <td>@issue.Status</td>
-                <td>@(issue.ReturnDate?.ToString("dd MMM yyyy") ?? "-")</td>
-                <td>
-                    @* later you can add "Details" or "Renew" buttons *@
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+  <tbody>
+@foreach (var item in Model)
+{
+    <tr>
+        <td>@item.BookTitle</td>
+        <td>@item.IssueDate.ToShortDateString()</td>
+        <td>@item.Status</td>
+        <td>@(item.ReturnDate?.ToShortDateString() ?? "-")</td>
+        <td>@item.FineAmount.ToString("0.00")</td>
+    </tr>
+}
+</tbody>

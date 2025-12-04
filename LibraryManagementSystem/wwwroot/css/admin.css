@@ -1,0 +1,245 @@
+﻿/* Root */
+.admin-layout {
+    display: flex;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f3f4ff, #eef6ff);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+    /* Themes */
+    .admin-layout[data-theme="dark"] {
+        background: radial-gradient(circle at top left, #1f2937, #020617);
+        color: #e5e7eb;
+    }
+
+/* SIDEBAR */
+.admin-sidebar {
+    width: 260px;
+    background: radial-gradient(circle at top left, #111827, #020617);
+    color: #f9fafb;
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 0 30px rgba(15, 23, 42, 0.6);
+}
+
+.admin-profile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px 8px 24px;
+    border-radius: 24px;
+    background: radial-gradient(circle at top left, #0f172a, #111827);
+    margin-bottom: 24px;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.admin-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    font-weight: 700;
+    color: #f9fafb;
+    margin-bottom: 12px;
+    box-shadow: 0 12px 30px rgba(79, 70, 229, 0.7);
+}
+
+.role-pill {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid rgba(148, 163, 184, 0.6);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    color: #e5e7eb;
+}
+
+.admin-name {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+    color: #f9fafb;
+}
+
+.admin-subtitle {
+    margin: 0;
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+/* NAV */
+.admin-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+    .admin-nav .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        color: #d1d5db;
+        text-decoration: none;
+        font-size: 14px;
+        transition: background 0.15s ease, color 0.15s ease, transform 0.1s ease;
+    }
+
+        .admin-nav .nav-item:hover {
+            background: linear-gradient(135deg, #4f46e5, #6366f1);
+            color: #f9fafb;
+            transform: translateY(-1px);
+        }
+
+    .admin-nav .nav-icon {
+        font-size: 18px;
+    }
+
+.admin-sidebar-footer {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.theme-toggle-btn {
+    border: 1px solid rgba(148, 163, 184, 0.5);
+    background: transparent;
+    color: #e5e7eb;
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.logout-link {
+    font-size: 13px;
+    color: #fca5a5;
+    text-decoration: none;
+}
+
+    .logout-link:hover {
+        text-decoration: underline;
+    }
+
+/* MAIN AREA */
+.admin-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 24px;
+}
+
+.admin-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.admin-top-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0;
+    color: #111827;
+}
+
+.admin-layout[data-theme="dark"] .admin-top-title {
+    color: #f9fafb;
+}
+
+.admin-date {
+    font-size: 13px;
+    color: #6b7280;
+}
+
+.admin-layout[data-theme="dark"] .admin-date {
+    color: #9ca3af;
+}
+
+.admin-content {
+    flex: 1;
+}
+
+/* CARDS / STATS */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.stat-card {
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.admin-layout[data-theme="dark"] .stat-card {
+    background: rgba(15, 23, 42, 0.9);
+    border-color: rgba(75, 85, 99, 0.8);
+}
+
+.stat-card .card-body {
+    padding: 14px 16px;
+}
+
+.stat-label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    color: #9ca3af;
+    margin-bottom: 4px;
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.admin-layout[data-theme="dark"] .stat-value {
+    color: #e5e7eb;
+}
+
+/* General card style for tables etc. */
+.card {
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(148, 163, 184, 0.4);
+    box-shadow: 0 15px 40px rgba(15, 23, 42, 0.14);
+}
+
+.admin-layout[data-theme="dark"] .card {
+    background: rgba(15, 23, 42, 0.93);
+    border-color: rgba(75, 85, 99, 0.9);
+}
+
+.card-body {
+    padding: 18px 20px;
+}
+
+/* Footer */
+.admin-footer {
+    margin-top: 24px;
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+    .admin-sidebar {
+        display: none; /* simple solution on small screens */
+    }
+}

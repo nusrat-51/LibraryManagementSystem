@@ -1,0 +1,45 @@
+﻿@model LibraryManagementSystem.Controllers.AdminDashboardVM
+
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Admin Dashboard";
+}
+
+
+<div class="dashboard-page">
+    <div class="stats-grid">
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="stat-label">Total Books</div>
+                <div class="stat-value">@Model.TotalBooks</div>
+                <p class="text-muted small mb-0">All books in catalog</p>
+            </div>
+        </div>
+
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="stat-label">Total Issues</div>
+                <div class="stat-value">@Model.TotalIssues</div>
+                <p class="text-muted small mb-0">Books issued so far</p>
+            </div>
+        </div>
+
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="stat-label">Total Members</div>
+                <div class="stat-value">@Model.TotalMembers</div>
+                <p class="text-muted small mb-0">Active memberships</p>
+            </div>
+        </div>
+
+        <div class="card stat-card">
+            <div class="card-body">
+                <div class="stat-label">Unpaid Fines</div>
+                <div class="stat-value">@Model.TotalUnpaidFine.ToString("0.00")</div>
+                <p class="text-muted small mb-0">Outstanding amount</p>
+            </div>
+        </div>
+    </div>
+
+    @* You can add charts / tables here later *@
+</div>

@@ -13,6 +13,7 @@ namespace LibraryManagementSystem.Data
 
         public DbSet<Book> Books { get; set; }
         public DbSet<IssueRecord> IssueRecords { get; set; }
+
         public DbSet<Reservation> Reservations { get; set; }
         public DbSet<Fine> Fines { get; set; }
         public DbSet<Membership> Memberships { get; set; }

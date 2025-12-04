@@ -39,7 +39,7 @@
                             </a>
                         </li>
 
-                        @* ---------- Student links ---------- *@
+                        @* ---------- Student links (if any view uses this layout) ---------- *@
                         @if (User.Identity?.IsAuthenticated == true && User.IsInRole("Student"))
                         {
                             <li class="nav-item">
@@ -54,9 +54,8 @@
                             </li>
                         }
 
-                        @* ---------- Librarian / Admin links ---------- *@
-                        @if (User.Identity?.IsAuthenticated == true &&
-                                                (User.IsInRole("Librarian") || User.IsInRole("Admin")))
+                        @* ---------- Librarian-only links ---------- *@
+                        @if (User.Identity?.IsAuthenticated == true && User.IsInRole("Librarian"))
                         {
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-controller="Librarian" asp-action="Dashboard">
@@ -66,6 +65,16 @@
                             <li class="nav-item">
                                 <a class="nav-link text-dark" asp-controller="Librarian" asp-action="ManageBooks">
                                     Manage Books
+                                </a>
+                            </li>
+                        }
+
+                        @* ---------- Admin-only links ---------- *@
+                        @if (User.Identity?.IsAuthenticated == true && User.IsInRole("Admin"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="Admin" asp-action="Dashboard">
+                                    Admin Dashboard
                                 </a>
                             </li>
                         }
