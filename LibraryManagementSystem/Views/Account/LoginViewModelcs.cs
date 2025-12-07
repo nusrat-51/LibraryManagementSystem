@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace LibraryManagementSystem.Models
+namespace LibraryManagementSystem.ViewModels.Account
 {
     public class LoginViewModel
     {
@@ -12,7 +12,7 @@ namespace LibraryManagementSystem.Models
         [DataType(DataType.Password)]
         public string Password { get; set; } = string.Empty;
 
-        // 👇 THIS is what was missing
+        // This is bound to the "Login as" dropdown
         [Required]
         public string SelectedRole { get; set; } = string.Empty;
 

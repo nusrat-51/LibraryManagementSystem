@@ -24,14 +24,14 @@
                 <span asp-validation-for="Password" class="text-danger"></span>
             </div>
 
-            <div class="form-row">
-                <label>Login as</label>
-                <select asp-for="LoginAs">
-                    <option value="Admin">Admin</option>
-                    <option value="Librarian">Librarian</option>
+            <div class="form-group">
+                <label asp-for="SelectedRole">Login as</label>
+                <select asp-for="SelectedRole" class="form-control">
                     <option value="Student">Student</option>
+                    <option value="Librarian">Librarian</option>
+                    <option value="Admin">Admin</option>
                 </select>
-                <span asp-validation-for="LoginAs" class="text-danger"></span>
+                <span asp-validation-for="SelectedRole" class="text-danger"></span>
             </div>
 
             <div class="form-row">

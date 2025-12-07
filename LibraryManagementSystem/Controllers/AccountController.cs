@@ -9,7 +9,7 @@ namespace LibraryManagementSystem.Controllers
 {
     public class AccountController : Controller
     {
-        // 🔹 Use ApplicationUser everywhere
+        // Use ApplicationUser everywhere
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
@@ -51,7 +51,7 @@ namespace LibraryManagementSystem.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
-            // 1) find user by email
+            // 1) Find user by email
             var user = await _userManager.FindByEmailAsync(model.Email);
             if (user == null)
             {
@@ -59,29 +59,55 @@ namespace LibraryManagementSystem.Controllers
                 return View(model);
             }
 
-            // 2) password check
-            var result = await _signInManager.PasswordSignInAsync(
-                user, model.Password, isPersistent: false, lockoutOnFailure: false);
-
-            if (!result.Succeeded)
+            // 2) Check password first (without signing in yet)
+            var passwordValid = await _userManager.CheckPasswordAsync(user, model.Password);
+            if (!passwordValid)
             {
                 ModelState.AddModelError(string.Empty, "Invalid login attempt.");
                 return View(model);
             }
 
-            // 3) redirect based on real role from DB
-            if (await _userManager.IsInRoleAsync(user, "Librarian"))
+            // 3) Check that selected role matches user's roles
+            //    (SelectedRole comes from the "Login as" dropdown)
+            if (!string.IsNullOrWhiteSpace(model.SelectedRole))
             {
-                return RedirectToAction("Dashboard", "Librarian");
+                var roles = await _userManager.GetRolesAsync(user);
+                if (!roles.Contains(model.SelectedRole))
+                {
+                    ModelState.AddModelError(
+                        string.Empty,
+                        $"You are not registered as {model.SelectedRole}.");
+
+                    return View(model);
+                }
             }
-            else if (await _userManager.IsInRoleAsync(user, "Admin"))
+
+            // 4) Actually sign in
+            await _signInManager.SignOutAsync();
+            var signInResult = await _signInManager.PasswordSignInAsync(
+                user,
+                model.Password,
+                isPersistent: false,
+                lockoutOnFailure: false);
+
+            if (!signInResult.Succeeded)
             {
-                return RedirectToAction("Index", "Admin");
+                ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                return View(model);
             }
-            else
+
+            // 5) Redirect based on selected (now validated) role
+            switch (model.SelectedRole)
             {
-                // default: student
-                return RedirectToAction("Dashboard", "Student");
+                case "Admin":
+                    return RedirectToAction("Dashboard", "Admin");
+
+                case "Librarian":
+                    return RedirectToAction("Dashboard", "Librarian");
+
+                case "Student":
+                default:
+                    return RedirectToAction("Dashboard", "Student");
             }
         }
 
@@ -106,7 +132,6 @@ namespace LibraryManagementSystem.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
-            // 🔹 use ApplicationUser here
             var user = new ApplicationUser
             {
                 UserName = model.Email,
@@ -125,14 +150,14 @@ namespace LibraryManagementSystem.Controllers
                 return View(model);
             }
 
-            // ✅ Ensure Student role exists
+            // Ensure Student role exists
             const string studentRole = "Student";
             if (!await _roleManager.RoleExistsAsync(studentRole))
             {
                 await _roleManager.CreateAsync(new IdentityRole(studentRole));
             }
 
-            // ✅ Put this user into Student role
+            // Add new user to Student role
             var roleResult = await _userManager.AddToRoleAsync(user, studentRole);
             if (!roleResult.Succeeded)
             {
@@ -142,8 +167,6 @@ namespace LibraryManagementSystem.Controllers
                 }
                 return View(model);
             }
-
-            // (optional) create Membership row here later
 
             await _signInManager.SignInAsync(user, isPersistent: false);
             return RedirectToAction("Dashboard", "Student");
