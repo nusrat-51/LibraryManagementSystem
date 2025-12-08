@@ -1,176 +1,220 @@
-﻿@{
-    Layout = null;
-}
+﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
+using LibraryManagementSystem.Data;
+using LibraryManagementSystem.Models;
+using LibraryManagementSystem.ViewModels.Librarian;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
-<link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+namespace LibraryManagementSystem.Controllers
+{
+    [Authorize(Roles = "Librarian,Admin")]
+    public class LibrarianController : Controller
+    {
+        private readonly LibraryContext _context;
 
+        public LibrarianController(LibraryContext context)
+        {
+            _context = context;
+        }
 
-<div class="layout">
+        // ===========================
+        //  DASHBOARD
+        // ===========================
+        public async Task<IActionResult>
+    Dashboard()
+    {
+    var today = DateTime.Today;
 
-    <aside class="sidebar">
-        <div class="brand">
-            <span class="brand-logo">📚</span>
-            <span class="brand-name">LMS</span>
-        </div>
+    // Counts for the top cards
+    var totalBooks = await _context.Books.CountAsync();
 
-        <nav class="menu">
-            <a href="/Librarian/Dashboard" class="menu-item active">Dashboard</a>
-           <a href="/Librarian/ManageBooks" class="menu-item">Books</a>
+    var todayIssues = await _context.IssueRecords
+    .CountAsync(i => i.IssueDate.Date == today);
 
-            <a href="/Issue/Index" class="menu-item">Issues</a>
-            <a href="/Return/Index" class="menu-item">Returns</a>
-            <a href="/Reservation/Index" class="menu-item">Reservations</a>
-            <a href="/Account/Logout" class="menu-item">Logout</a>
-        </nav>
-    </aside>
+    var overdueCount = await _context.IssueRecords
+    .CountAsync(i =>
+    i.Status == "Issued" &&
+    !i.ReturnDate.HasValue &&
+    i.IssueDate.AddDays(14).Date < today);
 
-    <div class="main">
-        <header class="topbar">
-            <h1 class="page-title">Librarian Dashboard</h1>
+    var reservations = await _context.Reservations.CountAsync();
 
-            <div class="topbar-right">
-                <div class="search-box">
-                    <input type="text" placeholder="Search books, members..." />
-                </div>
-                <div class="user-badge">
-                    <div class="avatar">L</div>
-                    <div class="user-info">
-                        <span class="user-name">Librarian</span>
-                        <span class="user-role">Librarian</span>
-                    </div>
-                </div>
-            </div>
-        </header>
+    var vm = new LibrarianDashboardVM
+    {
+    TotalBooks = totalBooks,
+    IssuedToday = todayIssues,
+    OverdueCount = overdueCount,
+    ActiveReservations = reservations
+    };
 
-        <main class="content">
+    return View(vm); // Views/Librarian/Dashboard.cshtml
+    }
 
-            <!-- Top Cards -->
-            <section class="cards">
-                <div class="card">
-                    <p class="card-label">Total Books</p>
-                    <p class="card-value">1,240</p>
-                    <p class="card-sub">All books in the library</p>
-                </div>
-                <div class="card">
-                    <p class="card-label">Issued Today</p>
-                    <p class="card-value">32</p>
-                    <p class="card-sub">Books issued on current day</p>
-                </div>
-                <div class="card">
-                    <p class="card-label">Overdue Books</p>
-                    <p class="card-value danger">18</p>
-                    <p class="card-sub">Pending returns with fine</p>
-                </div>
-                <div class="card">
-                    <p class="card-label">Reservations</p>
-                    <p class="card-value">12</p>
-                    <p class="card-sub">Active reservations</p>
-                </div>
-            </section>
+    // ===========================
+    //  ISSUES PAGE (LIST + FILTERS)
+    // ===========================
+    // /Librarian/Issues?scope=all|today|overdue|returned
+    public async Task<IActionResult>
+        Issues(string scope = "all")
+        {
+        var today = DateTime.Today;
 
-            <!-- Recent Issues + Overdues -->
-            <section class="grid-two">
-                <div class="panel">
-                    <div class="panel-header">
-                        <h2>Recent Issued Books</h2>
-                        <a href="/Issue/Index" class="link-small">View all</a>
-                    </div>
-                    <div class="table-wrapper">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Issue ID</th>
-                                    <th>Member</th>
-                                    <th>Book</th>
-                                    <th>Due Date</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>ISU-2001</td>
-                                    <td>Ali Khan</td>
-                                    <td>Clean Code</td>
-                                    <td>24 Nov 2025</td>
-                                    <td><span class="badge success">Issued</span></td>
-                                </tr>
-                                <tr>
-                                    <td>ISU-2002</td>
-                                    <td>Sara Lee</td>
-                                    <td>Database System Concepts</td>
-                                    <td>23 Nov 2025</td>
-                                    <td><span class="badge warning">Due Soon</span></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+        var query = _context.IssueRecords
+        .Include(i => i.Book)
+        .OrderByDescending(i => i.IssueDate)
+        .AsQueryable();
 
-                <div class="panel">
-                    <div class="panel-header">
-                        <h2>Overdue & Fines</h2>
-                        <a href="/Fine/Index" class="link-small">View fine report</a>
-                    </div>
-                    <div class="table-wrapper">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Member</th>
-                                    <th>Book</th>
-                                    <th>Days Late</th>
-                                    <th>Fine</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Mary Ali</td>
-                                    <td>Data Structures in C</td>
-                                    <td>4</td>
-                                    <td>120.00</td>
-                                    <td><span class="badge danger">Unpaid</span></td>
-                                </tr>
-                                <tr>
-                                    <td>Rahim Khan</td>
-                                    <td>Operating System Concepts</td>
-                                    <td>2</td>
-                                    <td>60.00</td>
-                                    <td><span class="badge warning">Partial</span></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
+        switch (scope?.ToLowerInvariant())
+        {
+        case "today":
+        query = query.Where(i => i.IssueDate.Date == today);
+        break;
 
-            <!-- Quick Actions -->
-            <section class="panel quick-actions">
-                <div class="panel-header">
-                    <h2>Quick Actions</h2>
-                </div>
-                <div class="actions-grid">
-                    <a href="/Books/Index" class="action-card">
-                        <h3>Manage Books</h3>
-                        <p>Add, edit, or remove books.</p>
-                    </a>
-                    <a href="/Issue/Index" class="action-card">
-                        <h3>Issue Book</h3>
-                        <p>Issue books to members.</p>
-                    </a>
-                    <a href="/Return/Index" class="action-card">
-                        <h3>Return Book</h3>
-                        <p>Process book returns & fines.</p>
-                    </a>
-                    <a href="/Reservation/Index" class="action-card">
-                        <h3>Manage Reservations</h3>
-                        <p>Approve or cancel reservations.</p>
-                    </a>
-                </div>
-            </section>
-        </main>
+        case "overdue":
+        query = query.Where(i =>
+        i.Status == "Issued" &&
+        !i.ReturnDate.HasValue &&
+        i.IssueDate.AddDays(14).Date < today);
+        break;
 
-        <footer class="footer">
-            © 2025 Library Management System
-        </footer>
-    </div>
-</div>
+        case "returned":
+        query = query.Where(i => i.Status == "Returned");
+        break;
+
+        default:
+        scope = "all";
+        break;
+        }
+
+        var list = await query.ToListAsync();
+
+        var vm = new LibrarianIssuesViewModel
+        {
+        Scope = scope,
+        TotalIssues = await _context.IssueRecords.CountAsync(),
+        TodayIssues = await _context.IssueRecords
+        .CountAsync(i => i.IssueDate.Date == today),
+        OverdueCount = await _context.IssueRecords
+        .CountAsync(i =>
+        i.Status == "Issued" &&
+        !i.ReturnDate.HasValue &&
+        i.IssueDate.AddDays(14).Date < today),
+        ReturnedToday = await _context.IssueRecords
+        .CountAsync(i =>
+        i.Status == "Returned" &&
+        i.ReturnDate.HasValue &&
+        i.ReturnDate.Value.Date == today),
+        Issues = list
+        };
+
+        return View(vm); // Views/Librarian/Issues.cshtml
+        }
+
+        // ===========================
+        //  BOOK LIST PAGE
+        // ===========================
+        public async Task<IActionResult>
+            ManageBooks()
+            {
+            var books = await _context.Books.ToListAsync();
+            return View(books);
+            }
+
+            // CREATE BOOK (GET)
+            public IActionResult CreateBook()
+            {
+            return View();
+            }
+
+            // CREATE BOOK (POST)
+            [HttpPost]
+            [ValidateAntiForgeryToken]
+            public async Task<IActionResult>
+                CreateBook(Book model)
+                {
+                if (!ModelState.IsValid)
+                return View(model);
+
+                model.AvailableCopies = model.TotalCopies;
+
+                _context.Books.Add(model);
+                await _context.SaveChangesAsync();
+
+                TempData["Success"] = "Book added successfully!";
+                return RedirectToAction(nameof(ManageBooks));
+                }
+
+                // EDIT BOOK (GET)
+                public async Task<IActionResult>
+                    EditBook(int id)
+                    {
+                    var book = await _context.Books.FindAsync(id);
+                    if (book == null) return NotFound();
+
+                    return View(book);
+                    }
+
+                    // EDIT BOOK (POST)
+                    [HttpPost]
+                    [ValidateAntiForgeryToken]
+                    public async Task<IActionResult>
+                        EditBook(Book model)
+                        {
+                        if (!ModelState.IsValid)
+                        return View(model);
+
+                        var book = await _context.Books.FindAsync(model.Id);
+                        if (book == null) return NotFound();
+
+                        book.Title = model.Title;
+                        book.Author = model.Author;
+                        book.Category = model.Category;
+                        book.TotalCopies = model.TotalCopies;
+                        book.AvailableCopies = model.TotalCopies;
+
+                        await _context.SaveChangesAsync();
+
+                        TempData["Success"] = "Book updated successfully!";
+                        return RedirectToAction(nameof(ManageBooks));
+                        }
+
+                        // DELETE BOOK (GET)
+                        public async Task<IActionResult>
+                            DeleteBook(int id)
+                            {
+                            var book = await _context.Books.FindAsync(id);
+                            if (book == null) return NotFound();
+
+                            return View(book);
+                            }
+
+                            // DELETE BOOK (POST)
+                            [HttpPost, ActionName("DeleteBook")]
+                            [ValidateAntiForgeryToken]
+                            public async Task<IActionResult>
+                                DeleteConfirmed(int id)
+                                {
+                                var book = await _context.Books.FindAsync(id);
+                                if (book == null) return NotFound();
+
+                                _context.Books.Remove(book);
+                                await _context.SaveChangesAsync();
+
+                                TempData["Success"] = "Book deleted successfully!";
+                                return RedirectToAction(nameof(ManageBooks));
+                                }
+
+                                // BOOK DETAILS
+                                public async Task<IActionResult>
+                                    BookDetails(int id)
+                                    {
+                                    var book = await _context.Books.FindAsync(id);
+                                    if (book == null) return NotFound();
+
+                                    return View(book);
+                                    }
+                                    }
+                                    }

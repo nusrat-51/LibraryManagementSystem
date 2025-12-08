@@ -1,179 +1,109 @@
-﻿@{
-    Layout = null;
+﻿@model LibraryManagementSystem.ViewModels.Librarian.IssuePageVM
+
+@{
+    Layout = "~/Views/Shared/_LibrarianLayout.cshtml";
+    ViewData["Title"] = "Issue & Return Books";
 }
 
-<link rel="stylesheet" href="~/css/dashboard.css" />
+<div class="dashboard-page">
+    <h1 class="page-title">Issue & Return Books</h1>
 
-<div class="layout">
-
-
-    <aside class="sidebar">
-        <div class="brand">
-            <span class="brand-logo">📚</span>
-            <span class="brand-name">LMS</span>
+    @if (TempData["IssueMessage"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["IssueMessage"]
         </div>
+    }
+    @if (TempData["IssueError"] != null)
+    {
+        <div class="alert alert-danger">
+            @TempData["IssueError"]
+        </div>
+    }
 
-        <nav class="menu">
-            <a href="/Home/Dashboard" class="menu-item">Dashboard</a>
-            <a href="/Books/Index" class="menu-item">Books</a>
-            <a href="/Issue/Index" class="menu-item active">Issues</a>
-            <a href="/Return/Index" class="menu-item">Returns</a>
-            <a href="/Reservation/Index" class="menu-item">Reservations</a>
-            <a href="/Fine/Index" class="menu-item">Fines</a>
-            <a href="/Report/Index" class="menu-item">Reports</a>
-            <a href="/Account/Logout" class="menu-item">Logout</a>
+    <!-- AVAILABLE BOOKS -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h2 class="section-title">Available Books</h2>
+            <p class="text-muted">Issue a book to a student using their email address.</p>
 
-        </nav>
-    </aside>
-
-
-    <div class="main">
-
-        <header class="topbar">
-            <h1 class="page-title">Issue Book</h1>
-
-            <div class="topbar-right">
-                <div class="search-box">
-                    <input type="text" placeholder="Search member or book..." />
-                </div>
-                <div class="user-badge">
-                    <div class="avatar">A</div>
-                    <div class="user-info">
-                        <span class="user-name">Admin</span>
-                        <span class="user-role">Librarian</span>
-                    </div>
-                </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Title</th>
+                            <th>Author</th>
+                            <th>Category</th>
+                            <th>Available</th>
+                            <th style="width: 260px;">Issue To</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var b in Model.AvailableBooks)
+                        {
+                            <tr>
+                                <td>@b.Title</td>
+                                <td>@b.Author</td>
+                                <td>@b.Category</td>
+                                <td>@b.AvailableCopies</td>
+                                <td>
+                                    <form asp-action="IssueBook" method="post" class="d-flex gap-2">
+                                        <input type="hidden" name="bookId" value="@b.Id" />
+                                        <input type="email"
+                                               name="studentEmail"
+                                               class="form-control"
+                                               placeholder="student@email.com"
+                                               required />
+                                        <button type="submit" class="btn btn-primary btn-sm">
+                                            Issue
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
             </div>
-        </header>
+        </div>
+    </div>
 
+    <!-- CURRENT ISSUES -->
+    <div class="card">
+        <div class="card-body">
+            <h2 class="section-title">Current Issued Books</h2>
 
-        <main class="content">
-
-
-            <section class="panel">
-                <div class="panel-header">
-                    <h2>Issue Book to Member</h2>
-                    <div class="panel-actions">
-                        <button class="btn outline" type="button">Clear</button>
-                        <button class="btn primary" type="button">Issue Book</button>
-                    </div>
-                </div>
-
-                <form class="form-grid">
-                    <div class="form-group">
-                        <label for="issueId">Issue ID</label>
-                        <input type="text" id="issueId" placeholder="e.g. ISU-1001" />
-                    </div>
-
-                    <div class="form-group">
-                        <label for="memberId">Member ID</label>
-                        <input type="text" id="memberId" placeholder="e.g. M-2025-01" />
-                    </div>
-
-                    <div class="form-group">
-                        <label for="memberName">Member Name</label>
-                        <input type="text" id="memberName" placeholder="Member full name" />
-                    </div>
-
-                    <div class="form-group">
-                        <label for="bookId">Book ID</label>
-                        <input type="text" id="bookId" placeholder="e.g. B1023" />
-                    </div>
-
-                    <div class="form-group">
-                        <label for="bookTitle">Book Title</label>
-                        <input type="text" id="bookTitle" placeholder="Selected book title" />
-                    </div>
-
-                    <div class="form-group">
-                        <label for="issueDate">Issue Date</label>
-                        <input type="date" id="issueDate" />
-                    </div>
-
-                    <div class="form-group">
-                        <label for="dueDate">Due Date</label>
-                        <input type="date" id="dueDate" />
-                    </div>
-
-                    <div class="form-group">
-                        <label for="remarks">Remarks</label>
-                        <input type="text" id="remarks" placeholder="Optional notes" />
-                    </div>
-                </form>
-            </section>
-
-
-            <section class="panel issues-panel">
-                <div class="panel-header">
-                    <h2>Recent Issued Books</h2>
-                    <div class="filter-bar">
-                        <select>
-                            <option value="">All status</option>
-                            <option>Issued</option>
-                            <option>Returned</option>
-                            <option>Overdue</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="table-wrapper">
-                    <table>
-                        <thead>
+            <div class="table-responsive">
+                <table class="table table-striped align-middle">
+                    <thead>
+                        <tr>
+                            <th>Book</th>
+                            <th>Student</th>
+                            <th>Issued On</th>
+                            <th>Status</th>
+                            <th style="width: 120px;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var i in Model.ActiveIssues)
+                        {
                             <tr>
-                                <th>Issue ID</th>
-                                <th>Member</th>
-                                <th>Book</th>
-                                <th>Issue Date</th>
-                                <th>Due Date</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>ISU-1001</td>
-                                <td>John Smith (M-2025-01)</td>
-                                <td>Introduction to Algorithms (B1023)</td>
-                                <td>10 Nov 2025</td>
-                                <td>20 Nov 2025</td>
-                                <td><span class="badge success">Issued</span></td>
+                                <td>@i.Book?.Title</td>
+                                <td>@i.StudentEmail</td>
+                                <td>@i.IssueDate.ToLocalTime().ToString("dd MMM yyyy")</td>
+                                <td>@i.Status</td>
                                 <td>
-                                    <button class="btn-table">Mark Return</button>
-                                    <button class="btn-table subtle">Details</button>
+                                    <form asp-action="ReturnBook" method="post">
+                                        <input type="hidden" name="issueId" value="@i.Id" />
+                                        <button type="submit" class="btn btn-outline-success btn-sm">
+                                            Mark Returned
+                                        </button>
+                                    </form>
                                 </td>
                             </tr>
-                            <tr>
-                                <td>ISU-0994</td>
-                                <td>Mary Ali (M-2025-02)</td>
-                                <td>Data Structures in C (B0875)</td>
-                                <td>01 Nov 2025</td>
-                                <td>11 Nov 2025</td>
-                                <td><span class="badge warning">Overdue</span></td>
-                                <td>
-                                    <button class="btn-table danger">Return + Fine</button>
-                                    <button class="btn-table subtle">Details</button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>ISU-0988</td>
-                                <td>Rahim Khan (M-2025-03)</td>
-                                <td>World History (B0551)</td>
-                                <td>25 Oct 2025</td>
-                                <td>04 Nov 2025</td>
-                                <td><span class="badge muted">Returned</span></td>
-                                <td>
-                                    <button class="btn-table subtle">Details</button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-        </main>
-
-        <footer class="footer">
-            © 2025 Library Management System
-        </footer>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </div>

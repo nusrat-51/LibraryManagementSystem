@@ -1,0 +1,248 @@
+﻿@using LibraryManagementSystem.ViewModels.Librarian
+@model LibrarianIssuesViewModel
+
+@{
+    Layout = "~/Views/Shared/_LibrarianLayout.cshtml";
+    ViewData["Title"] = "Issues";
+}
+
+<style>
+    .lib-issues-wrapper {
+        padding: 24px 28px;
+        background: #f5f7ff;
+        min-height: 100vh;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .lib-issues-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 18px;
+    }
+
+    .lib-issues-title {
+        font-size: 22px;
+        font-weight: 700;
+        color: #111827;
+    }
+
+    .lib-issues-subtitle {
+        font-size: 13px;
+        color: #6b7280;
+        margin-top: 4px;
+    }
+
+    .lib-issues-filters {
+        display: inline-flex;
+        gap: 8px;
+        background: #eef2ff;
+        padding: 4px;
+        border-radius: 999px;
+    }
+
+    .lib-filter-btn {
+        border: none;
+        padding: 6px 14px;
+        border-radius: 999px;
+        font-size: 13px;
+        background: transparent;
+        color: #4b5563;
+        text-decoration: none;
+    }
+
+    .lib-filter-btn-active {
+        background: #4f46e5;
+        color: #ffffff;
+        box-shadow: 0 8px 18px rgba(79, 70, 229, 0.35);
+    }
+
+    .lib-issues-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .lib-summary-card {
+        background: #ffffff;
+        border-radius: 14px;
+        padding: 10px 14px;
+        border: 1px solid #e5e7eb;
+        font-size: 12px;
+    }
+
+    .lib-summary-label {
+        color: #6b7280;
+        margin-bottom: 4px;
+    }
+
+    .lib-summary-value {
+        font-size: 18px;
+        font-weight: 700;
+        color: #111827;
+    }
+
+    .lib-issues-table-card {
+        background: #ffffff;
+        border-radius: 18px;
+        padding: 16px 18px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+        border: 1px solid #eef2ff;
+    }
+
+    .lib-issues-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+
+        .lib-issues-table thead {
+            background: #f3f4ff;
+        }
+
+        .lib-issues-table th,
+        .lib-issues-table td {
+            padding: 8px 10px;
+            text-align: left;
+            border-bottom: 1px solid #edf2f7;
+            white-space: nowrap;
+        }
+
+    .lib-status-pill {
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 11px;
+    }
+
+    .lib-status-issued {
+        background: #eff6ff;
+        color: #1d4ed8;
+    }
+
+    .lib-status-returned {
+        background: #ecfdf5;
+        color: #15803d;
+    }
+
+    .lib-status-overdue {
+        background: #fef2f2;
+        color: #b91c1c;
+    }
+
+    @@media (max-width: 900px) {
+        .lib-issues-table {
+            display: block;
+            overflow-x: auto;
+        }
+    }
+</style>
+
+<div class="lib-issues-wrapper">
+    <div class="lib-issues-header">
+        <div>
+            <div class="lib-issues-title">Issues</div>
+            <div class="lib-issues-subtitle">
+                View and filter all book issues, including overdue and returned items.
+            </div>
+        </div>
+
+        <div class="lib-issues-filters">
+            @{
+                string scope = Model.Scope?.ToLowerInvariant() ?? "all";
+            }
+            <a asp-action="Issues" asp-route-scope="all"
+               class="lib-filter-btn @(scope == "all" ? "lib-filter-btn-active" : "")">All</a>
+            <a asp-action="Issues" asp-route-scope="today"
+               class="lib-filter-btn @(scope == "today" ? "lib-filter-btn-active" : "")">Today</a>
+            <a asp-action="Issues" asp-route-scope="overdue"
+               class="lib-filter-btn @(scope == "overdue" ? "lib-filter-btn-active" : "")">Overdue</a>
+            <a asp-action="Issues" asp-route-scope="returned"
+               class="lib-filter-btn @(scope == "returned" ? "lib-filter-btn-active" : "")">Returned</a>
+        </div>
+    </div>
+
+    <!-- Summary cards -->
+    <div class="lib-issues-summary">
+        <div class="lib-summary-card">
+            <div class="lib-summary-label">Total Issues</div>
+            <div class="lib-summary-value">@Model.TotalIssues</div>
+        </div>
+        <div class="lib-summary-card">
+            <div class="lib-summary-label">Issued Today</div>
+            <div class="lib-summary-value">@Model.TodayIssues</div>
+        </div>
+        <div class="lib-summary-card">
+            <div class="lib-summary-label">Overdue</div>
+            <div class="lib-summary-value">@Model.OverdueCount</div>
+        </div>
+        <div class="lib-summary-card">
+            <div class="lib-summary-label">Returned Today</div>
+            <div class="lib-summary-value">@Model.ReturnedToday</div>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="lib-issues-table-card">
+        <table class="lib-issues-table">
+            <thead>
+                <tr>
+                    <th>Book</th>
+                    <th>Student Email</th>
+                    <th>Issued On</th>
+                    <th>Due Date</th>
+                    <th>Return Date</th>
+                    <th>Status</th>
+                    <th>Fine</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Issues.Any())
+                {
+                    <tr>
+                        <td colspan="7">No issue records found for this filter.</td>
+                    </tr>
+                }
+                else
+                {
+                    var today = DateTime.Today;
+                    foreach (var issue in Model.Issues)
+                    {
+                        bool isOverdue = issue.Status == "Issued"
+                        && !issue.ReturnDate.HasValue
+                        && issue.IssueDate.AddDays(14).Date < today;
+
+                        <tr>
+                            <td>@issue.Book?.Title</td>
+                            <td>@issue.StudentEmail</td>
+                            <td>@issue.IssueDate.ToString("dd MMM yyyy")</td>
+                            <td>@issue.IssueDate.AddDays(14).ToString("dd MMM yyyy")</td>
+                            <td>
+                                @(issue.ReturnDate.HasValue
+                                                        ? issue.ReturnDate.Value.ToString("dd MMM yyyy")
+                                                        : "-")
+                            </td>
+                            <td>
+                                @if (isOverdue)
+                                {
+                                    <span class="lib-status-pill lib-status-overdue">Overdue</span>
+                                }
+                                else if (issue.Status == "Returned")
+                                {
+                                    <span class="lib-status-pill lib-status-returned">Returned</span>
+                                }
+                                else
+                                {
+                                    <span class="lib-status-pill lib-status-issued">Issued</span>
+                                }
+                            </td>
+                            <td>
+                                @issue.FineAmount.ToString("0.00")
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

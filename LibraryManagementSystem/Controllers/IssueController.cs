@@ -1,75 +1,148 @@
-﻿using LibraryManagementSystem.Data;
-using LibraryManagementSystem.Models;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
+﻿using System;
 using System.Linq;
+using System.Threading.Tasks;
+using LibraryManagementSystem.Data;
+using LibraryManagementSystem.Models;
+using LibraryManagementSystem.ViewModels.Librarian;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace LibraryManagementSystem.Controllers
 {
-    [Authorize(Roles = "Student,Librarian")]
+    [Authorize(Roles = "Librarian")]
     public class IssueController : Controller
     {
         private readonly LibraryContext _context;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public IssueController(LibraryContext context)
+        public IssueController(LibraryContext context, UserManager<ApplicationUser> userManager)
         {
             _context = context;
+            _userManager = userManager;
         }
 
-        // Show all issues (mostly for librarian)
-        public IActionResult Index()
+        // ========================
+        //  ISSUE DASHBOARD
+        // ========================
+        [HttpGet]
+        public async Task<IActionResult> Index()
         {
-            var issues = _context.IssueRecords.ToList();
-            return View(issues);
-        }
-
-        // Issue a book
-        [HttpPost]
-        public IActionResult IssueBook(int bookId)
-        {
-            var book = _context.Books.Find(bookId);
-            var user = User.Identity.Name;
-
-            if (book == null || book.AvailableCopies <= 0)
-                return BadRequest("Book not available.");
-
-            var issue = new IssueRecord
+            var vm = new IssuePageVM
             {
-                BookId = bookId,
-                StudentEmail = user,
-                IssueDate = DateTime.Now,
-                Status = "Issued"
+                AvailableBooks = await _context.Books
+                    .Where(b => b.AvailableCopies > 0)
+                    .OrderBy(b => b.Title)
+                    .ToListAsync(),
+
+                ActiveIssues = await _context.IssueRecords
+                    .Include(i => i.Book)
+                    .Where(i => i.Status == "Issued")
+                    .OrderByDescending(i => i.IssueDate)
+                    .ToListAsync()
             };
 
-            // Save to DB
-            _context.IssueRecords.Add(issue);
-
-            // Decrease available copies
-            book.AvailableCopies--;
-
-            _context.SaveChanges();
-
-            return RedirectToAction("MyIssues", "Student");
+            return View(vm); // Views/Issue/Index.cshtml
         }
 
-        // Return Book
+        // ========================
+        //  ISSUE A BOOK
+        // ========================
         [HttpPost]
-        public IActionResult ReturnBook(int issueId)
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> IssueBook(int bookId, string studentEmail)
         {
-            var issue = _context.IssueRecords.Find(issueId);
+            studentEmail = studentEmail?.Trim() ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(studentEmail))
+            {
+                TempData["IssueError"] = "Student email is required.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // 1) Check book exists and is available
+            var book = await _context.Books.FindAsync(bookId);
+            if (book == null)
+            {
+                TempData["IssueError"] = "Selected book does not exist.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (book.AvailableCopies <= 0)
+            {
+                TempData["IssueError"] = "No available copies for this book.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // 2) Check that user exists and is in Student role
+            var student = await _userManager.FindByEmailAsync(studentEmail);
+            if (student == null || !(await _userManager.IsInRoleAsync(student, "Student")))
+            {
+                TempData["IssueError"] = "No registered student with that email.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // 3) Create IssueRecord
+            var issue = new IssueRecord
+            {
+                BookId = book.Id,
+                StudentEmail = studentEmail,
+                IssueDate = DateTime.UtcNow,
+                ReturnDate = null,
+                Status = "Issued",
+                FineAmount = 0m
+            };
+
+            book.AvailableCopies -= 1;
+
+            _context.IssueRecords.Add(issue);
+            _context.Books.Update(book);
+            await _context.SaveChangesAsync();
+
+            TempData["IssueMessage"] = $"Book '{book.Title}' issued to {studentEmail}.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        // ========================
+        //  RETURN A BOOK
+        // ========================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReturnBook(int issueId)
+        {
+            var issue = await _context.IssueRecords
+                .Include(i => i.Book)
+                .FirstOrDefaultAsync(i => i.Id == issueId);
 
             if (issue == null)
-                return NotFound();
+            {
+                TempData["IssueError"] = "Issue record not found.";
+                return RedirectToAction(nameof(Index));
+            }
 
+            if (issue.Status == "Returned")
+            {
+                TempData["IssueError"] = "This book is already returned.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Mark as returned
+            issue.ReturnDate = DateTime.UtcNow;
             issue.Status = "Returned";
-            issue.ReturnDate = DateTime.Now;
 
-            var book = _context.Books.Find(issue.BookId);
-            book.AvailableCopies++;
+            // Increase available copies
+            if (issue.Book != null)
+            {
+                issue.Book.AvailableCopies += 1;
+                _context.Books.Update(issue.Book);
+            }
 
-            _context.SaveChanges();
+            // (Fine calculation will be added later in Fine module)
+            await _context.SaveChangesAsync();
 
-            return RedirectToAction("MyIssues", "Student");
+            TempData["IssueMessage"] = $"Book '{issue.Book?.Title}' returned by {issue.StudentEmail}.";
+            return RedirectToAction(nameof(Index));
         }
     }
 }

@@ -5,49 +5,92 @@
     ViewData["Title"] = "Manage Users";
 }
 
-<h1>Manage Users</h1>
+<div class="dashboard-page">
+    <h1 class="page-title">Manage Users</h1>
 
-@if (TempData["AdminMessage"] != null)
-{
-    <div class="alert alert-info">
-        @TempData["AdminMessage"]
+    @if (TempData["AdminMessage"] != null)
+    {
+        <div class="alert alert-info">
+            @TempData["AdminMessage"]
+        </div>
+    }
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Roles</th>
+                            <th>Status</th>
+                            <th style="width: 280px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var user in Model)
+                        {
+                            <tr>
+                                <td>@user.Email</td>
+                                <td>@string.Join(", ", user.Roles)</td>
+                                <td>
+                                    @if (user.IsLocked)
+                                    {
+                                        <span class="badge bg-danger">Locked</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success">Active</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <form asp-action="SetRole"
+                                              asp-route-id="@user.UserId"
+                                              asp-route-role="Admin"
+                                              method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-primary">
+                                                Make Admin
+                                            </button>
+                                        </form>
+
+                                        <form asp-action="SetRole"
+                                              asp-route-id="@user.UserId"
+                                              asp-route-role="Librarian"
+                                              method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-warning">
+                                                Make Librarian
+                                            </button>
+                                        </form>
+
+                                        <form asp-action="SetRole"
+                                              asp-route-id="@user.UserId"
+                                              asp-route-role="Student"
+                                              method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                                Make Student
+                                            </button>
+                                        </form>
+
+                                        <form asp-action="ToggleLock"
+                                              asp-route-id="@user.UserId"
+                                              method="post" class="d-inline ms-2">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit"
+                                                    class="btn btn-sm @(user.IsLocked ? "btn-success" : "btn-danger")">
+                                                @(user.IsLocked ? "Unlock" : "Lock")
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
-}
-
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Email</th>
-            <th>Roles</th>
-            <th style="width: 220px;">Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var user in Model)
-        {
-            <tr>
-                <td>@user.Email</td>
-                <td>@user.Roles</td>
-                <td>
-                    <form asp-action="MakeLibrarian"
-                          method="post"
-                          asp-route-id="@user.UserId"
-                          style="display:inline">
-                        <button type="submit" class="btn btn-sm btn-warning">
-                            Make Librarian
-                        </button>
-                    </form>
-
-                    <form asp-action="MakeStudent"
-                          method="post"
-                          asp-route-id="@user.UserId"
-                          style="display:inline">
-                        <button type="submit" class="btn btn-sm btn-secondary">
-                            Make Student
-                        </button>
-                    </form>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+</div>

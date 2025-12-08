@@ -1,8 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using LibraryManagementSystem.Data;
+using LibraryManagementSystem.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,13 +15,20 @@ namespace LibraryManagementSystem.Controllers
     public class AdminController : Controller
     {
         private readonly LibraryContext _context;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly RoleManager<IdentityRole> _roleManager;
 
-        public AdminController(LibraryContext context)
+        public AdminController(
+            LibraryContext context,
+            UserManager<ApplicationUser> userManager,
+            RoleManager<IdentityRole> roleManager)
         {
             _context = context;
+            _userManager = userManager;
+            _roleManager = roleManager;
         }
 
-        // Redirect /Admin and /Admin/Index to Dashboard
+        // /Admin -> /Admin/Dashboard
         [HttpGet]
         public IActionResult Index()
         {
@@ -46,23 +56,139 @@ namespace LibraryManagementSystem.Controllers
                 TotalUnpaidFine = totalUnpaidFine
             };
 
-            // Uses Views/Admin/Dashboard.cshtml
-            return View(vm);
+            return View(vm);   // Views/Admin/Dashboard.cshtml
         }
 
         // ========================
-        //  USERS PAGE (simple stub)
+        //  MANAGE USERS (LIST)
         // ========================
         [HttpGet]
-        public IActionResult Users()
+        public async Task<IActionResult> Users()
         {
-            // For now return an empty list so Views/Admin/Users.cshtml compiles
-            var users = new List<AdminUserVM>();
-            return View(users);
+            var users = await _userManager.Users
+                .OrderBy(u => u.Email)
+                .ToListAsync();
+
+            var list = new List<AdminUserVM>();
+
+            foreach (var user in users)
+            {
+                var roles = await _userManager.GetRolesAsync(user);
+
+                bool isLocked =
+                    user.LockoutEnd.HasValue &&
+                    user.LockoutEnd.Value.UtcDateTime > DateTime.UtcNow;
+
+                list.Add(new AdminUserVM
+                {
+                    UserId = user.Id,
+                    Email = user.Email ?? string.Empty,
+                    Roles = roles.ToList(),
+                    IsLocked = isLocked
+                });
+            }
+
+            return View(list);   // Views/Admin/Users.cshtml
+        }
+
+        // ========================
+        //  CHANGE USER ROLE
+        // ========================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SetRole(string id, string role)
+        {
+            if (string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(role))
+            {
+                return RedirectToAction(nameof(Users));
+            }
+
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null)
+                return NotFound();
+
+            // prevent admin from removing their own admin role
+            if (User.Identity?.Name == user.Email && role != "Admin")
+            {
+                TempData["AdminMessage"] = "You cannot remove your own Admin role.";
+                return RedirectToAction(nameof(Users));
+            }
+
+            // ensure role exists
+            if (!await _roleManager.RoleExistsAsync(role))
+            {
+                await _roleManager.CreateAsync(new IdentityRole(role));
+            }
+
+            var currentRoles = await _userManager.GetRolesAsync(user);
+            await _userManager.RemoveFromRolesAsync(user, currentRoles);
+            await _userManager.AddToRoleAsync(user, role);
+
+            TempData["AdminMessage"] = $"{user.Email} is now in role: {role}.";
+            return RedirectToAction(nameof(Users));
+        }
+
+        // ========================
+        //  LOCK / UNLOCK USER
+        // ========================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleLock(string id)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+                return RedirectToAction(nameof(Users));
+
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null)
+                return NotFound();
+
+            // don't allow locking yourself
+            if (User.Identity?.Name == user.Email)
+            {
+                TempData["AdminMessage"] = "You cannot lock your own account.";
+                return RedirectToAction(nameof(Users));
+            }
+
+            bool isLocked =
+                user.LockoutEnd.HasValue &&
+                user.LockoutEnd.Value.UtcDateTime > DateTime.UtcNow;
+
+            if (isLocked)
+            {
+                user.LockoutEnd = null; // unlock
+                TempData["AdminMessage"] = $"{user.Email} has been unlocked.";
+            }
+            else
+            {
+                // lock for a long time (effectively deactivated)
+                user.LockoutEnd = DateTimeOffset.UtcNow.AddYears(50);
+                TempData["AdminMessage"] = $"{user.Email} has been locked.";
+            }
+
+            await _userManager.UpdateAsync(user);
+            return RedirectToAction(nameof(Users));
+        }
+
+        // ========================
+        //  MANAGE BOOKS (ADMIN -> reuse Books/Index)
+        // ========================
+        [HttpGet]
+        public async Task<IActionResult> ManageBooks()
+        {
+            // Reuse your existing Books index UI
+            var books = await _context.Books
+                .OrderBy(b => b.Title)
+                .ToListAsync();
+
+            // This assumes your old page is Views/Books/Index.cshtml
+            return View("~/Views/Books/Index.cshtml", books);
         }
     }
 
-    // Simple view-model for admin dashboard
+    // ========================
+    //  VIEW MODELS
+    // ========================
+
     public class AdminDashboardVM
     {
         public int TotalBooks { get; set; }
@@ -71,11 +197,11 @@ namespace LibraryManagementSystem.Controllers
         public decimal TotalUnpaidFine { get; set; }
     }
 
-    // View-model used by Views/Admin/Users.cshtml
     public class AdminUserVM
     {
         public string UserId { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
-        public string Roles { get; set; } = string.Empty;
+        public List<string> Roles { get; set; } = new();
+        public bool IsLocked { get; set; }
     }
 }
