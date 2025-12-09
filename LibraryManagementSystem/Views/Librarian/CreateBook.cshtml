@@ -1,28 +1,55 @@
 ﻿@model LibraryManagementSystem.Models.Book
 
+@{
+    ViewData["Title"] = "Add New Book";
+    Layout = "~/Views/Shared/_LibrarianLayout.cshtml";
+}
+
 <h2>Add New Book</h2>
+<hr />
 
-<form asp-action="CreateBook" method="post">
-    <div class="form-group">
-        <label>Title</label>
-        <input asp-for="Title" class="form-control" required />
+<div class="row">
+    <div class="col-md-8">
+        <form asp-action="Create" asp-controller="Librarian">
+            <div class="form-group mb-3">
+                <label asp-for="Title" class="form-label"></label>
+                <input asp-for="Title" class="form-control" />
+                <span asp-validation-for="Title" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Author" class="form-label"></label>
+                <input asp-for="Author" class="form-control" />
+                <span asp-validation-for="Author" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Category" class="form-label"></label>
+                <input asp-for="Category" class="form-control" />
+                <span asp-validation-for="Category" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="TotalCopies" class="form-label"></label>
+                <input asp-for="TotalCopies" class="form-control" />
+                <span asp-validation-for="TotalCopies" class="text-danger"></span>
+            </div>
+
+            @* 🔹 AvailableCopies field *@
+            <div class="form-group mb-4">
+                <label asp-for="AvailableCopies" class="form-label"></label>
+                <input asp-for="AvailableCopies" class="form-control" />
+                <span asp-validation-for="AvailableCopies" class="text-danger"></span>
+            </div>
+
+            <button type="submit" class="btn btn-success">Save</button>
+            <a asp-action="ManageBooks" asp-controller="Librarian" class="btn btn-secondary">Back</a>
+        </form>
     </div>
+</div>
 
-    <div class="form-group">
-        <label>Author</label>
-        <input asp-for="Author" class="form-control" required />
-    </div>
-
-    <div class="form-group">
-        <label>Category</label>
-        <input asp-for="Category" class="form-control" placeholder="General or Premium" required />
-    </div>
-
-    <div class="form-group">
-        <label>Total Copies</label>
-        <input asp-for="TotalCopies" type="number" class="form-control" required />
-    </div>
-
-    <button class="btn btn-success mt-3" type="submit">Save</button>
-    <a class="btn btn-secondary mt-3" asp-action="ManageBooks">Back</a>
-</form>
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

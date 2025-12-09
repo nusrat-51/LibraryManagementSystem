@@ -1,0 +1,62 @@
+﻿@model List<LibraryManagementSystem.Models.IssueRecord>
+
+@{
+    Layout = "~/Views/Shared/_LibrarianLayout.cshtml";
+    ViewData["Title"] = "Returns";
+}
+
+<div class="dashboard-page">
+    <h1 class="page-title mb-4">Returns</h1>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">Returned Books History</h5>
+            <small class="text-muted">@Model.Count returns</small>
+        </div>
+        <div class="card-body">
+            @if (Model.Count == 0)
+            {
+                <p class="text-muted mb-0">No books have been returned yet.</p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Book</th>
+                                <th>Student Email</th>
+                                <th>Issued On</th>
+                                <th>Returned On</th>
+                                <th>Status</th>
+                                <th>Fine</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var r in Model)
+                            {
+                                <tr>
+                                    <td>@r.Book?.Title</td>
+                                    <td>@r.StudentEmail</td>
+                                    <td>@r.IssueDate.ToString("yyyy-MM-dd")</td>
+                                    <td>@r.ReturnDate?.ToString("yyyy-MM-dd")</td>
+                                    <td>@r.Status</td>
+                                    <td>
+                                        @if (r.FineAmount > 0)
+                                        {
+                                            <span class="text-danger">@r.FineAmount.ToString("0.00")</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">0.00</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>

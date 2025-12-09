@@ -2,41 +2,107 @@
 @model IEnumerable<Reservation>
 
 @{
+    Layout = "~/Views/Shared/_LibrarianLayout.cshtml";
     ViewData["Title"] = "Reservations";
+
+    // Make sure we never crash if Model is null
+    var list = Model ?? Enumerable.Empty<Reservation>();
 }
 
-<h2>Reservations</h2>
+<div class="dashboard-page">
+    <h1 class="page-title mb-4">Reservations</h1>
 
-<p>
-    <a asp-action="Create" class="btn btn-primary">Create New Reservation</a>
-</p>
+    @* Success message from Create/Edit/Delete *@
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">
+            @TempData["Success"]
+        </div>
+    }
 
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Book</th>
-            <th>Student Email</th>
-            <th>Requested At</th>
-            <th>Status</th>
-            <th>Queue</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var r in Model)
-        {
-            <tr>
-                <td>@r.Book?.Title</td>
-                <td>@r.StudentEmail</td>
-                <td>@r.RequestedAt.ToString("dd MMM yyyy HH:mm")</td>
-                <td>@r.Status</td>
-                <td>@r.QueuePosition</td>
-                <td>
-                    <a asp-action="Details" asp-route-id="@r.Id">Details</a> |
-                    <a asp-action="Edit" asp-route-id="@r.Id">Edit</a> |
-                    <a asp-action="Delete" asp-route-id="@r.Id">Delete</a>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+    @* Optional debug info (only if your controller sets TempData["ReservationDebug"]) *@
+    @if (TempData["ReservationDebug"] != null)
+    {
+        <div class="alert alert-info">
+            DEBUG: @TempData["ReservationDebug"]
+        </div>
+    }
+
+    <div class="card shadow-sm mb-3">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="card-title mb-0">All Reservations</h5>
+                <small class="text-muted">@list.Count() total</small>
+            </div>
+
+            <a asp-action="Create" class="btn btn-primary btn-sm">
+                + Create Reservation
+            </a>
+        </div>
+
+        <div class="card-body">
+            @if (!list.Any())
+            {
+                <p class="text-muted mb-0">No reservations yet.</p>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Book</th>
+                                <th>Student Email</th>
+                                <th>Requested At</th>
+                                <th>Status</th>
+                                <th>Queue #</th>
+                                <th style="width: 160px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var r in list)
+                            {
+                                <tr>
+                                    <td>@r.Book?.Title</td>
+                                    <td>@r.StudentEmail</td>
+                                    <td>@r.RequestedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                                    <td>
+                                        @{
+                                            var badgeClass = r.Status switch
+                                            {
+                                                ReservationStatus.Pending => "bg-warning text-dark",
+                                                ReservationStatus.Active => "bg-info text-dark",
+                                                ReservationStatus.Fulfilled => "bg-success",
+                                                ReservationStatus.Cancelled => "bg-secondary",
+                                                ReservationStatus.Expired => "bg-danger",
+                                                _ => "bg-light text-dark"
+                                            };
+                                        }
+                                        <span class="badge @badgeClass">
+                                            @r.Status
+                                        </span>
+                                    </td>
+                                    <td>@r.QueuePosition</td>
+                                    <td>
+                                        <a asp-action="Details" asp-route-id="@r.Id"
+                                           class="btn btn-outline-secondary btn-sm">
+                                            Details
+                                        </a>
+                                        <a asp-action="Edit" asp-route-id="@r.Id"
+                                           class="btn btn-outline-primary btn-sm">
+                                            Edit
+                                        </a>
+                                        <a asp-action="Delete" asp-route-id="@r.Id"
+                                           class="btn btn-outline-danger btn-sm">
+                                            Delete
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>

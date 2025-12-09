@@ -6,7 +6,7 @@
 }
 
 <div class="dashboard-page">
-    <h1 class="page-title">Issue & Return Books</h1>
+    <h1 class="page-title mb-4">Issue & Return Books</h1>
 
     @if (TempData["IssueMessage"] != null)
     {
@@ -14,6 +14,7 @@
             @TempData["IssueMessage"]
         </div>
     }
+
     @if (TempData["IssueError"] != null)
     {
         <div class="alert alert-danger">
@@ -21,88 +22,100 @@
         </div>
     }
 
-    <!-- AVAILABLE BOOKS -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <h2 class="section-title">Available Books</h2>
-            <p class="text-muted">Issue a book to a student using their email address.</p>
+    <div class="row g-3">
+        <!-- ISSUE FORM -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0">Issue a Book</h5>
+                </div>
+                <div class="card-body">
+                    <form asp-action="IssueBook" asp-controller="Issue" method="post">
+                        <div class="mb-3">
+                            <label class="form-label">Student Email</label>
+                            <input type="email"
+                                   name="studentEmail"
+                                   class="form-control"
+                                   placeholder="student@example.com"
+                                   required />
+                        </div>
 
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead>
-                        <tr>
-                            <th>Title</th>
-                            <th>Author</th>
-                            <th>Category</th>
-                            <th>Available</th>
-                            <th style="width: 260px;">Issue To</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var b in Model.AvailableBooks)
-                        {
-                            <tr>
-                                <td>@b.Title</td>
-                                <td>@b.Author</td>
-                                <td>@b.Category</td>
-                                <td>@b.AvailableCopies</td>
-                                <td>
-                                    <form asp-action="IssueBook" method="post" class="d-flex gap-2">
-                                        <input type="hidden" name="bookId" value="@b.Id" />
-                                        <input type="email"
-                                               name="studentEmail"
-                                               class="form-control"
-                                               placeholder="student@email.com"
-                                               required />
-                                        <button type="submit" class="btn btn-primary btn-sm">
-                                            Issue
-                                        </button>
-                                    </form>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+                        <div class="mb-3">
+                            <label class="form-label">Select Book</label>
+                            <select name="bookId" class="form-select" required>
+                                <option value="">-- Choose a book --</option>
+                                @foreach (var b in Model.AvailableBooks)
+                                {
+                                    <option value="@b.Id">
+                                        @b.Title (@b.AvailableCopies available)
+                                    </option>
+                                }
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">
+                            Issue Book
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- CURRENT ISSUES -->
-    <div class="card">
-        <div class="card-body">
-            <h2 class="section-title">Current Issued Books</h2>
-
-            <div class="table-responsive">
-                <table class="table table-striped align-middle">
-                    <thead>
-                        <tr>
-                            <th>Book</th>
-                            <th>Student</th>
-                            <th>Issued On</th>
-                            <th>Status</th>
-                            <th style="width: 120px;">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var i in Model.ActiveIssues)
-                        {
-                            <tr>
-                                <td>@i.Book?.Title</td>
-                                <td>@i.StudentEmail</td>
-                                <td>@i.IssueDate.ToLocalTime().ToString("dd MMM yyyy")</td>
-                                <td>@i.Status</td>
-                                <td>
-                                    <form asp-action="ReturnBook" method="post">
-                                        <input type="hidden" name="issueId" value="@i.Id" />
-                                        <button type="submit" class="btn btn-outline-success btn-sm">
-                                            Mark Returned
-                                        </button>
-                                    </form>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+        <!-- ACTIVE ISSUES TABLE -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">Currently Issued Books</h5>
+                    <small class="text-muted">@Model.ActiveIssues.Count active</small>
+                </div>
+                <div class="card-body">
+                    @if (!Model.ActiveIssues.Any())
+                    {
+                        <p class="text-muted mb-0">No active issues at the moment.</p>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Book</th>
+                                        <th>Student Email</th>
+                                        <th>Issued On</th>
+                                        <th>Status</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var i in Model.ActiveIssues)
+                                    {
+                                        <tr>
+                                            <td>@i.Book?.Title</td>
+                                            <td>@i.StudentEmail</td>
+                                            <td>@i.IssueDate.ToString("yyyy-MM-dd")</td>
+                                            <td>
+                                                <span class="badge bg-warning text-dark">
+                                                    @i.Status
+                                                </span>
+                                            </td>
+                                            <td class="text-end">
+                                                <form asp-action="ReturnBook"
+                                                      asp-controller="Issue"
+                                                      method="post"
+                                                      class="d-inline">
+                                                    <input type="hidden" name="issueId" value="@i.Id" />
+                                                    <button type="submit" class="btn btn-outline-success btn-sm">
+                                                        Mark Returned
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
             </div>
         </div>
     </div>

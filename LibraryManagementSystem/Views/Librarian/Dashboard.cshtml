@@ -1,220 +1,299 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
-using LibraryManagementSystem.Data;
-using LibraryManagementSystem.Models;
-using LibraryManagementSystem.ViewModels.Librarian;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+﻿@model LibraryManagementSystem.ViewModels.Librarian.LibrarianDashboardViewModel
 
-namespace LibraryManagementSystem.Controllers
-{
-    [Authorize(Roles = "Librarian,Admin")]
-    public class LibrarianController : Controller
-    {
-        private readonly LibraryContext _context;
+@{
+    Layout = "~/Views/Shared/_LibrarianLayout.cshtml";
+    ViewData["Title"] = "Librarian Dashboard";
+}
 
-        public LibrarianController(LibraryContext context)
-        {
-            _context = context;
+
+<div class="dashboard-page">
+    <h1 class="page-title mb-4">Librarian Dashboard</h1>
+
+    <!-- TOP SUMMARY STATS -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="card shadow-sm h-100 summary-card">
+                <div class="card-body d-flex flex-column justify-content-between">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="text-muted mb-0">Total Books</h6>
+                        <span class="badge bg-soft-primary text-primary">Catalog</span>
+                    </div>
+                    <h2 class="mb-1">@Model.TotalBooks</h2>
+                    <small class="text-muted">All books in catalog</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="card shadow-sm h-100 summary-card">
+                <div class="card-body d-flex flex-column justify-content-between">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="text-muted mb-0">Issued Today</h6>
+                        <span class="badge bg-soft-success text-success">Today</span>
+                    </div>
+                    <h2 class="mb-1">@Model.IssuedToday</h2>
+                    <small class="text-muted">Books issued so far today</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="card shadow-sm h-100 summary-card">
+                <div class="card-body d-flex flex-column justify-content-between">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="text-muted mb-0">Overdue Issues</h6>
+                        <span class="badge bg-soft-danger text-danger">Attention</span>
+                    </div>
+                    <h2 class="mb-1">@Model.OverdueCount</h2>
+                    <small class="text-muted">Currently overdue items</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="card shadow-sm h-100 summary-card">
+                <div class="card-body d-flex flex-column justify-content-between">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="text-muted mb-0">Active Reservations</h6>
+                        <span class="badge bg-soft-warning text-warning">Pending</span>
+                    </div>
+                    <h2 class="mb-1">@Model.ActiveReservations</h2>
+                    <small class="text-muted">Pending / active reservations</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CHARTS ROW -->
+    <div class="row g-3 mb-4">
+        <!-- Snapshot Chart -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm h-100">
+                <div class="card-header d-flex justify-content-between align-items-center bg-white">
+                    <h5 class="card-title mb-0">Library Snapshot</h5>
+                    <small class="text-muted">Today’s key metrics</small>
+                </div>
+                <div class="card-body chart-body-lg">
+                    <canvas id="snapshotChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fines Chart -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header d-flex justify-content-between align-items-center bg-white">
+                    <h5 class="card-title mb-0">Fines Overview</h5>
+                    <small class="text-muted">Unpaid vs last collection</small>
+                </div>
+                <div class="card-body chart-body-sm">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Students with unpaid fines</span>
+                            <span class="fw-semibold">@Model.StudentsWithUnpaidFines</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Total unpaid fine</span>
+                            <span class="fw-semibold">@Model.TotalUnpaidFine.ToString("0.00")</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span class="text-muted">Last fine collected</span>
+                            <span class="fw-semibold">@Model.LastFineCollected.ToString("0.00")</span>
+                        </div>
+                    </div>
+                    <canvas id="finesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- QUICK ACTIONS + OVERVIEW -->
+    <div class="row g-3">
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-3 mb-lg-0">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Quick Actions</h5>
+                    <div class="d-flex flex-column gap-2">
+                        <a asp-controller="Librarian" asp-action="ManageBooks" class="btn btn-primary w-100">
+                            Manage Books
+                        </a>
+                        <a asp-controller="Librarian" asp-action="Issues" class="btn btn-outline-secondary w-100">
+                            View All Issues
+                        </a>
+                        <a asp-controller="Issue" asp-action="Index" class="btn btn-outline-primary w-100">
+                            Issue / Return Books
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overview text -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm h-100">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Overview</h5>
+                    <p class="text-muted mb-2">
+                        Use this dashboard to keep track of library inventory, monitor overdue items,
+                        handle fines and reservations, and quickly navigate to detailed management
+                        pages using the actions on the left.
+                    </p>
+                    <p class="text-muted mb-0">
+                        The charts above give you an at-a-glance view of how the library is performing
+                        today — including issued books, overdue items, active reservations, and fine
+                        activity. You can later bind these charts to more detailed time-series data
+                        (e.g., issues per day, fines per month) without changing the overall layout.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .dashboard-page {
+            padding-top: 0.75rem;
         }
 
-        // ===========================
-        //  DASHBOARD
-        // ===========================
-        public async Task<IActionResult>
-    Dashboard()
-    {
-    var today = DateTime.Today;
-
-    // Counts for the top cards
-    var totalBooks = await _context.Books.CountAsync();
-
-    var todayIssues = await _context.IssueRecords
-    .CountAsync(i => i.IssueDate.Date == today);
-
-    var overdueCount = await _context.IssueRecords
-    .CountAsync(i =>
-    i.Status == "Issued" &&
-    !i.ReturnDate.HasValue &&
-    i.IssueDate.AddDays(14).Date < today);
-
-    var reservations = await _context.Reservations.CountAsync();
-
-    var vm = new LibrarianDashboardVM
-    {
-    TotalBooks = totalBooks,
-    IssuedToday = todayIssues,
-    OverdueCount = overdueCount,
-    ActiveReservations = reservations
-    };
-
-    return View(vm); // Views/Librarian/Dashboard.cshtml
-    }
-
-    // ===========================
-    //  ISSUES PAGE (LIST + FILTERS)
-    // ===========================
-    // /Librarian/Issues?scope=all|today|overdue|returned
-    public async Task<IActionResult>
-        Issues(string scope = "all")
-        {
-        var today = DateTime.Today;
-
-        var query = _context.IssueRecords
-        .Include(i => i.Book)
-        .OrderByDescending(i => i.IssueDate)
-        .AsQueryable();
-
-        switch (scope?.ToLowerInvariant())
-        {
-        case "today":
-        query = query.Where(i => i.IssueDate.Date == today);
-        break;
-
-        case "overdue":
-        query = query.Where(i =>
-        i.Status == "Issued" &&
-        !i.ReturnDate.HasValue &&
-        i.IssueDate.AddDays(14).Date < today);
-        break;
-
-        case "returned":
-        query = query.Where(i => i.Status == "Returned");
-        break;
-
-        default:
-        scope = "all";
-        break;
+        .summary-card {
+            border: 0;
+            border-radius: 1rem;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
         }
 
-        var list = await query.ToListAsync();
-
-        var vm = new LibrarianIssuesViewModel
-        {
-        Scope = scope,
-        TotalIssues = await _context.IssueRecords.CountAsync(),
-        TodayIssues = await _context.IssueRecords
-        .CountAsync(i => i.IssueDate.Date == today),
-        OverdueCount = await _context.IssueRecords
-        .CountAsync(i =>
-        i.Status == "Issued" &&
-        !i.ReturnDate.HasValue &&
-        i.IssueDate.AddDays(14).Date < today),
-        ReturnedToday = await _context.IssueRecords
-        .CountAsync(i =>
-        i.Status == "Returned" &&
-        i.ReturnDate.HasValue &&
-        i.ReturnDate.Value.Date == today),
-        Issues = list
-        };
-
-        return View(vm); // Views/Librarian/Issues.cshtml
-        }
-
-        // ===========================
-        //  BOOK LIST PAGE
-        // ===========================
-        public async Task<IActionResult>
-            ManageBooks()
-            {
-            var books = await _context.Books.ToListAsync();
-            return View(books);
+            .summary-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 0.75rem 1.5rem rgba(15, 23, 42, 0.08);
             }
 
-            // CREATE BOOK (GET)
-            public IActionResult CreateBook()
-            {
-            return View();
+        .bg-soft-primary {
+            background-color: rgba(59, 130, 246, 0.12);
+        }
+
+        .bg-soft-success {
+            background-color: rgba(34, 197, 94, 0.12);
+        }
+
+        .bg-soft-danger {
+            background-color: rgba(239, 68, 68, 0.12);
+        }
+
+        .bg-soft-warning {
+            background-color: rgba(245, 158, 11, 0.12);
+        }
+
+        .badge.bg-soft-primary,
+        .badge.bg-soft-success,
+        .badge.bg-soft-danger,
+        .badge.bg-soft-warning {
+            font-weight: 500;
+            border-radius: 999px;
+            padding: 0.35rem 0.7rem;
+            font-size: 0.7rem;
+        }
+
+        /* Chart container sizes so everything fits nicely on one page */
+        .chart-body-lg {
+            position: relative;
+            height: 220px; /* main line chart height */
+        }
+
+        .chart-body-sm {
+            position: relative;
+            height: 220px; /* pie chart height */
+        }
+
+            .chart-body-lg canvas,
+            .chart-body-sm canvas {
+                width: 100% !important;
+                height: 100% !important;
             }
+    </style>
+}
 
-            // CREATE BOOK (POST)
-            [HttpPost]
-            [ValidateAntiForgeryToken]
-            public async Task<IActionResult>
-                CreateBook(Book model)
-                {
-                if (!ModelState.IsValid)
-                return View(model);
+@section Scripts {
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-                model.AvailableCopies = model.TotalCopies;
+    <script>
+        (function () {
+            // Existing model values (no logic changed)
+            var totalBooks = @Model.TotalBooks;
+            var issuedToday = @Model.IssuedToday;
+            var overdueCount = @Model.OverdueCount;
+            var activeReservations = @Model.ActiveReservations;
 
-                _context.Books.Add(model);
-                await _context.SaveChangesAsync();
+            var totalUnpaidFine = parseFloat("@Model.TotalUnpaidFine.ToString(System.Globalization.CultureInfo.InvariantCulture)");
+            var lastFineCollected = parseFloat("@Model.LastFineCollected.ToString(System.Globalization.CultureInfo.InvariantCulture)");
 
-                TempData["Success"] = "Book added successfully!";
-                return RedirectToAction(nameof(ManageBooks));
-                }
-
-                // EDIT BOOK (GET)
-                public async Task<IActionResult>
-                    EditBook(int id)
-                    {
-                    var book = await _context.Books.FindAsync(id);
-                    if (book == null) return NotFound();
-
-                    return View(book);
-                    }
-
-                    // EDIT BOOK (POST)
-                    [HttpPost]
-                    [ValidateAntiForgeryToken]
-                    public async Task<IActionResult>
-                        EditBook(Book model)
-                        {
-                        if (!ModelState.IsValid)
-                        return View(model);
-
-                        var book = await _context.Books.FindAsync(model.Id);
-                        if (book == null) return NotFound();
-
-                        book.Title = model.Title;
-                        book.Author = model.Author;
-                        book.Category = model.Category;
-                        book.TotalCopies = model.TotalCopies;
-                        book.AvailableCopies = model.TotalCopies;
-
-                        await _context.SaveChangesAsync();
-
-                        TempData["Success"] = "Book updated successfully!";
-                        return RedirectToAction(nameof(ManageBooks));
-                        }
-
-                        // DELETE BOOK (GET)
-                        public async Task<IActionResult>
-                            DeleteBook(int id)
-                            {
-                            var book = await _context.Books.FindAsync(id);
-                            if (book == null) return NotFound();
-
-                            return View(book);
+            // LINE chart for snapshot
+            var snapshotCtx = document.getElementById('snapshotChart');
+            if (snapshotCtx) {
+                new Chart(snapshotCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Total Books', 'Issued Today', 'Overdue', 'Reservations'],
+                        datasets: [{
+                            label: 'Count',
+                            data: [totalBooks, issuedToday, overdueCount, activeReservations],
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.3 // slight curve
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false
                             }
-
-                            // DELETE BOOK (POST)
-                            [HttpPost, ActionName("DeleteBook")]
-                            [ValidateAntiForgeryToken]
-                            public async Task<IActionResult>
-                                DeleteConfirmed(int id)
-                                {
-                                var book = await _context.Books.FindAsync(id);
-                                if (book == null) return NotFound();
-
-                                _context.Books.Remove(book);
-                                await _context.SaveChangesAsync();
-
-                                TempData["Success"] = "Book deleted successfully!";
-                                return RedirectToAction(nameof(ManageBooks));
+                        },
+                        scales: {
+                            x: {
+                                grid: {
+                                    display: false
                                 }
+                            },
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    precision: 0
+                                }
+                            }
+                        }
+                    }
+                });
+            }
 
-                                // BOOK DETAILS
-                                public async Task<IActionResult>
-                                    BookDetails(int id)
-                                    {
-                                    var book = await _context.Books.FindAsync(id);
-                                    if (book == null) return NotFound();
-
-                                    return View(book);
-                                    }
-                                    }
-                                    }
+            // PIE chart for fines
+            var finesCtx = document.getElementById('finesChart');
+            if (finesCtx) {
+                new Chart(finesCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Total Unpaid Fine', 'Last Fine Collected'],
+                        datasets: [{
+                            data: [totalUnpaidFine, lastFineCollected],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            }
+        })();
+    </script>
+}

@@ -23,45 +23,51 @@ namespace LibraryManagementSystem.Controllers
             _userManager = userManager;
         }
 
-        // ========================
-        //  ISSUE DASHBOARD
-        // ========================
-        [HttpGet]
+        // ===========================
+        //  ISSUE & RETURN PAGE
+        // ===========================
         public async Task<IActionResult> Index()
         {
             var vm = new IssuePageVM
             {
+                // Books that have at least 1 copy available
                 AvailableBooks = await _context.Books
                     .Where(b => b.AvailableCopies > 0)
                     .OrderBy(b => b.Title)
                     .ToListAsync(),
 
+                // Active issues = not yet returned
                 ActiveIssues = await _context.IssueRecords
                     .Include(i => i.Book)
-                    .Where(i => i.Status == "Issued")
+                    .Where(i => i.ReturnDate == null)
                     .OrderByDescending(i => i.IssueDate)
                     .ToListAsync()
             };
 
-            return View(vm); // Views/Issue/Index.cshtml
+            return View(vm);
         }
 
-        // ========================
+        // ===========================
         //  ISSUE A BOOK
-        // ========================
+        // ===========================
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> IssueBook(int bookId, string studentEmail)
         {
-            studentEmail = studentEmail?.Trim() ?? string.Empty;
-
             if (string.IsNullOrWhiteSpace(studentEmail))
             {
                 TempData["IssueError"] = "Student email is required.";
                 return RedirectToAction(nameof(Index));
             }
 
-            // 1) Check book exists and is available
+            // make sure user exists (optional but nice)
+            var user = await _userManager.FindByEmailAsync(studentEmail);
+            if (user == null)
+            {
+                TempData["IssueError"] = $"No student found with email '{studentEmail}'.";
+                return RedirectToAction(nameof(Index));
+            }
+
             var book = await _context.Books.FindAsync(bookId);
             if (book == null)
             {
@@ -71,27 +77,17 @@ namespace LibraryManagementSystem.Controllers
 
             if (book.AvailableCopies <= 0)
             {
-                TempData["IssueError"] = "No available copies for this book.";
+                TempData["IssueError"] = $"No available copies for '{book.Title}'.";
                 return RedirectToAction(nameof(Index));
             }
 
-            // 2) Check that user exists and is in Student role
-            var student = await _userManager.FindByEmailAsync(studentEmail);
-            if (student == null || !(await _userManager.IsInRoleAsync(student, "Student")))
-            {
-                TempData["IssueError"] = "No registered student with that email.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            // 3) Create IssueRecord
+            // Create issue record
             var issue = new IssueRecord
             {
                 BookId = book.Id,
                 StudentEmail = studentEmail,
-                IssueDate = DateTime.UtcNow,
-                ReturnDate = null,
-                Status = "Issued",
-                FineAmount = 0m
+                IssueDate = DateTime.Now,
+                Status = "Issued"
             };
 
             book.AvailableCopies -= 1;
@@ -104,9 +100,9 @@ namespace LibraryManagementSystem.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // ========================
+        // ===========================
         //  RETURN A BOOK
-        // ========================
+        // ===========================
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ReturnBook(int issueId)
@@ -121,24 +117,22 @@ namespace LibraryManagementSystem.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            if (issue.Status == "Returned")
+            if (issue.ReturnDate != null)
             {
-                TempData["IssueError"] = "This book is already returned.";
+                TempData["IssueError"] = "This issue is already returned.";
                 return RedirectToAction(nameof(Index));
             }
 
-            // Mark as returned
-            issue.ReturnDate = DateTime.UtcNow;
+            issue.ReturnDate = DateTime.Now;
             issue.Status = "Returned";
 
-            // Increase available copies
             if (issue.Book != null)
             {
                 issue.Book.AvailableCopies += 1;
                 _context.Books.Update(issue.Book);
             }
 
-            // (Fine calculation will be added later in Fine module)
+            // Fine calculation will be added later in Fine module
             await _context.SaveChangesAsync();
 
             TempData["IssueMessage"] = $"Book '{issue.Book?.Title}' returned by {issue.StudentEmail}.";

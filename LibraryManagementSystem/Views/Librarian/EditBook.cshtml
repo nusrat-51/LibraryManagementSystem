@@ -1,30 +1,52 @@
 ﻿@model LibraryManagementSystem.Models.Book
 
+@{
+    ViewData["Title"] = "Edit Book";
+    Layout = "~/Views/Shared/_LibrarianLayout.cshtml";   // or your layout
+}
+
 <h2>Edit Book</h2>
 
 <form asp-action="EditBook" method="post">
     <input type="hidden" asp-for="Id" />
 
-    <div class="form-group">
-        <label>Title</label>
+    <div class="form-group mb-3">
+        <label asp-for="Title" class="form-label"></label>
         <input asp-for="Title" class="form-control" required />
+        <span asp-validation-for="Title" class="text-danger"></span>
     </div>
 
-    <div class="form-group">
-        <label>Author</label>
+    <div class="form-group mb-3">
+        <label asp-for="Author" class="form-label"></label>
         <input asp-for="Author" class="form-control" required />
+        <span asp-validation-for="Author" class="text-danger"></span>
     </div>
 
-    <div class="form-group">
-        <label>Category</label>
+    <div class="form-group mb-3">
+        <label asp-for="Category" class="form-label"></label>
         <input asp-for="Category" class="form-control" required />
+        <span asp-validation-for="Category" class="text-danger"></span>
     </div>
 
-    <div class="form-group">
-        <label>Total Copies</label>
+    <div class="form-group mb-3">
+        <label asp-for="TotalCopies" class="form-label"></label>
         <input asp-for="TotalCopies" type="number" class="form-control" required />
+        <span asp-validation-for="TotalCopies" class="text-danger"></span>
     </div>
 
-    <button class="btn btn-primary mt-3" type="submit">Update</button>
-    <a class="btn btn-secondary mt-3" asp-action="ManageBooks">Back</a>
+    <!-- 🔹 New field: AvailableCopies -->
+    <div class="form-group mb-4">
+        <label asp-for="AvailableCopies" class="form-label"></label>
+        <input asp-for="AvailableCopies" type="number" class="form-control" required />
+        <span asp-validation-for="AvailableCopies" class="text-danger"></span>
+    </div>
+
+    <button class="btn btn-primary mt-2" type="submit">Save</button>
+    <a class="btn btn-secondary mt-2" asp-action="ManageBooks">Back</a>
 </form>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

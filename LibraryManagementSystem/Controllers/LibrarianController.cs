@@ -1,5 +1,6 @@
 ﻿using LibraryManagementSystem.Data;
 using LibraryManagementSystem.Models;
+using LibraryManagementSystem.ViewModels.Librarian;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -18,17 +19,54 @@ namespace LibraryManagementSystem.Controllers
         }
 
         // ===========================
-        //  DASHBOARD (VIEW ONLY)
+        //  DASHBOARD
         // ===========================
-        public IActionResult Dashboard()
+        public async Task<IActionResult> Dashboard()
         {
-            // Right now just returns the Librarian/Dashboard.cshtml view
-            // Later we can add stats (total books, overdue, etc.) from _context
-            return View();
+            var model = new LibrarianDashboardViewModel
+            {
+                TotalBooks = await _context.Books.CountAsync(),
+
+                IssuedToday = 0,
+                OverdueCount = 0,
+                ActiveReservations = 0,
+
+                StudentsWithUnpaidFines = 0,
+                TotalUnpaidFine = 0m,
+                LastFineCollected = 0m
+            };
+
+            return View(model);
         }
 
         // ===========================
-        //  BOOK LIST PAGE
+        //  ISSUES MENU (SIDEBAR)
+        //  /Librarian/Issues  ->  /Issue/Index
+        // ===========================
+        // ===========================
+        //  ISSUES & RETURNS MENU LINKS
+        // ===========================
+
+        // /Librarian/Issues  ->  /Issue/Index
+        public IActionResult Issues()
+        {
+            return RedirectToAction("Index", "Issue");
+        }
+
+        // /Librarian/Returns ->  /Returns/Index
+        public IActionResult Returns()
+        {
+            return RedirectToAction("Index", "Returns");
+        }
+        // /Librarian/Reservations  ->  /Reservations/Index
+        public IActionResult Reservations()
+        {
+            return RedirectToAction("Index", "Reservations");
+        }
+
+
+        // ===========================
+        //  MANAGE BOOKS (LIST)
         // ===========================
         public async Task<IActionResult> ManageBooks()
         {
@@ -54,7 +92,6 @@ namespace LibraryManagementSystem.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
-            // AvailableCopies = TotalCopies initially
             model.AvailableCopies = model.TotalCopies;
 
             _context.Books.Add(model);
@@ -88,19 +125,27 @@ namespace LibraryManagementSystem.Controllers
             var book = await _context.Books.FindAsync(model.Id);
             if (book == null) return NotFound();
 
-            // Update fields
             book.Title = model.Title;
             book.Author = model.Author;
             book.Category = model.Category;
             book.TotalCopies = model.TotalCopies;
-
-            // For now, reset AvailableCopies = TotalCopies
-            book.AvailableCopies = model.TotalCopies;
+            book.AvailableCopies = model.AvailableCopies;
 
             await _context.SaveChangesAsync();
 
             TempData["Success"] = "Book updated successfully!";
             return RedirectToAction(nameof(ManageBooks));
+        }
+
+        // ===========================
+        //  BOOK DETAILS
+        // ===========================
+        public async Task<IActionResult> BookDetails(int id)
+        {
+            var book = await _context.Books.FindAsync(id);
+            if (book == null) return NotFound();
+
+            return View(book);
         }
 
         // ===========================
@@ -119,7 +164,7 @@ namespace LibraryManagementSystem.Controllers
         // ===========================
         [HttpPost, ActionName("DeleteBook")]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteBookConfirmed(int id)
         {
             var book = await _context.Books.FindAsync(id);
             if (book == null) return NotFound();
@@ -129,17 +174,6 @@ namespace LibraryManagementSystem.Controllers
 
             TempData["Success"] = "Book deleted successfully!";
             return RedirectToAction(nameof(ManageBooks));
-        }
-
-        // ===========================
-        //  BOOK DETAILS
-        // ===========================
-        public async Task<IActionResult> BookDetails(int id)
-        {
-            var book = await _context.Books.FindAsync(id);
-            if (book == null) return NotFound();
-
-            return View(book);
         }
     }
 }

@@ -2,54 +2,129 @@
     Layout = null;
 }
 
-<link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>Librarian - Library Management System</title>
 
-<div class="layout" data-theme="light">
-    <aside class="sidebar">
-        <div class="brand">
-            <span class="brand-logo">📚</span>
-            <span class="brand-name">LMS</span>
+    <!-- Bootstrap -->
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+
+    <!-- Your custom CSS -->
+    <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
+
+    @RenderSection("Styles", required: false)
+
+    <style>
+        /* Hamburger toggle button */
+        .sidebar-toggle-btn {
+            position: fixed;
+            top: 15px;
+            left: 15px;
+            z-index: 3000;
+            background: #fff;
+            border: 1px solid #ccc;
+            font-size: 22px;
+            padding: 6px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            transition: 0.2s ease;
+            display: none; /* hidden by default (sidebar open) */
+        }
+
+        body.sidebar-closed .sidebar-toggle-btn {
+            display: block; /* show only when sidebar is hidden */
+        }
+
+        .sidebar-toggle-btn:hover {
+            background: #f4f4f4;
+        }
+
+        /* Layout */
+        .layout {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 240px;
+            transition: margin-left 0.3s ease;
+        }
+
+        .main {
+            flex-grow: 1;
+            transition: margin-left 0.3s ease;
+            padding-left: 20px;
+        }
+
+        /* When sidebar is hidden */
+        body.sidebar-closed .sidebar {
+            margin-left: -260px;
+        }
+
+        body.sidebar-closed .main {
+            margin-left: 20px !important;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Hamburger button -->
+    <button id="sidebarToggle" class="sidebar-toggle-btn">☰</button>
+
+    <div class="layout" data-theme="light">
+
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="brand">
+                <span class="brand-logo">📚</span>
+                <span class="brand-name">LMS</span>
+            </div>
+
+            <nav class="menu">
+                <a asp-controller="Librarian" asp-action="Dashboard" class="menu-item">Dashboard</a>
+                <a asp-controller="Librarian" asp-action="ManageBooks" class="menu-item">Books</a>
+                <a asp-controller="Librarian" asp-action="Issues" class="menu-item">Issues</a>
+                <a asp-controller="Librarian" asp-action="Returns" class="menu-item">Returns</a>
+                <a asp-controller="Librarian" asp-action="Reservations" class="menu-item">Reservations</a>
+                <a asp-controller="Account" asp-action="Logout" class="menu-item">Logout</a>
+            </nav>
+
+            <div class="theme-section">
+                <div class="theme-label">Theme</div>
+                <button id="themeToggle" class="theme-toggle-button">Light / Dark</button>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <div class="main">
+            @RenderBody()
         </div>
 
-        <nav class="menu">
-            <a asp-controller="Librarian" asp-action="Dashboard" class="menu-item">
-                Dashboard
-            </a>
-
-            <a asp-controller="Librarian" asp-action="ManageBooks" class="menu-item">
-                Books
-            </a>
-
-            <a asp-controller="Librarian" asp-action="Issues" class="menu-item">
-                Issues
-            </a>
-
-            <a asp-controller="Librarian" asp-action="Returns" class="menu-item">
-                Returns
-            </a>
-
-            <a asp-controller="Librarian" asp-action="Reservations" class="menu-item">
-                Reservations
-            </a>
-
-            <a asp-controller="Account" asp-action="Logout" class="menu-item">
-                Logout
-            </a>
-        </nav>
-
-        <div class="theme-section">
-            <div class="theme-label">Theme</div>
-            <button id="themeToggle" class="theme-toggle-button">
-                Light / Dark
-            </button>
-        </div>
-    </aside>
-
-    <div class="main">
-        @RenderBody()
     </div>
-</div>
 
-<footer class="footer">
-    © 2025 Library Management System
-</footer>
+    <footer class="footer">
+        © 2025 Library Management System
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Sidebar toggle script -->
+    <script>
+        (function () {
+            var toggleBtn = document.getElementById("sidebarToggle");
+
+            toggleBtn.addEventListener("click", function () {
+                document.body.classList.toggle("sidebar-closed");
+            });
+        })();
+    </script>
+
+    @RenderSection("Scripts", required: false)
+
+</body>
+</html>
