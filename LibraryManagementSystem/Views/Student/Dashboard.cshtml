@@ -1,4 +1,4 @@
-﻿@model LibraryManagementSystem.Controllers.StudentDashboardViewModel
+﻿@model LibraryManagementSystem.ViewModels.Student.StudentApplyDashboardVM
 
 @{
     Layout = "~/Views/Shared/_StudentLayout.cshtml";
@@ -6,156 +6,203 @@
 }
 
 <div class="dashboard-page">
-    <h1 class="page-title">Student Dashboard</h1>
-    <p class="text-muted">
-        Welcome, @Model.StudentName (@Model.Email)
-    </p>
+    <h1 class="page-title mb-4">Student Dashboard</h1>
 
-    <!-- Membership + Summary -->
-    <div class="dashboard-grid">
-        <!-- Membership card -->
-        <div class="card">
-            <div class="card-body">
-                <h3 class="section-title">Membership</h3>
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
 
-                <div class="membership-info">
-                    <p><strong>Email:</strong> @Model.Email</p>
-                    <p><strong>Type:</strong> @Model.MembershipType</p>
-                    <p>
-                        <strong>Status:</strong>
-                        @(Model.IsMembershipActive ? "Active" : "Inactive")
-                    </p>
-
-                    <hr />
-
-                    <p><strong>Membership ID / Barcode</strong><br />
-                        @Model.MembershipBarcode
-                    </p>
-
-                    <p>
-                        <strong>Expiry:</strong>
-                        @(Model.MembershipExpiry?.ToString("dd MMM yyyy") ?? "N/A")
-                    </p>
-
-                    <form asp-action="UpgradeToPremium" method="post">
-                        <button type="submit" class="btn-primary">
-                            @(Model.HasPremiumAccess ? "Renew Premium" : "Upgrade to Premium")
-                        </button>
-                    </form>
+    <!-- ===== Summary cards (same vibe as librarian dashboard) ===== -->
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="text-muted small">Current Issued</div>
+                    <div class="fs-3 fw-semibold">@Model.CurrentIssuedCount</div>
                 </div>
             </div>
         </div>
 
-        <!-- Stats cards -->
-        <div class="stats-grid">
-            <div class="card stat-card">
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="card shadow-sm">
                 <div class="card-body">
-                    <div class="stat-label">Current Issued</div>
-                    <div class="stat-value">@Model.CurrentIssuedCount</div>
+                    <div class="text-muted small">Overdue</div>
+                    <div class="fs-3 fw-semibold">@Model.OverdueCount</div>
                 </div>
             </div>
+        </div>
 
-            <div class="card stat-card">
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="card shadow-sm">
                 <div class="card-body">
-                    <div class="stat-label">Overdue</div>
-                    <div class="stat-value">@Model.OverdueCount</div>
+                    <div class="text-muted small">Total Books</div>
+                    <div class="fs-3 fw-semibold">@Model.TotalBooksCount</div>
                 </div>
             </div>
+        </div>
 
-            <div class="card stat-card">
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="card shadow-sm">
                 <div class="card-body">
-                    <div class="stat-label">Total Books</div>
-                    <div class="stat-value">@Model.TotalBooksCount</div>
-                </div>
-            </div>
-
-            <div class="card stat-card">
-                <div class="card-body">
-                    <div class="stat-label">Unpaid Fine</div>
-                    <div class="stat-value">@Model.TotalUnpaidFine.ToString("0.00")</div>
+                    <div class="text-muted small">Unpaid Fine</div>
+                    <div class="fs-3 fw-semibold">@Model.TotalUnpaidFine.ToString("0.00")</div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Recent issued books -->
-    <div class="card mt-2">
+    <!-- ===== Student Info ===== -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="card-title mb-0">Student Info</h5>
+                <small class="text-muted">Your profile details</small>
+            </div>
+        </div>
+
         <div class="card-body">
-            <div class="section-header">
-                <h3 class="section-title">Recent Issued Books</h3>
-                <a asp-action="MyIssues" class="link-small">View All</a>
+            <div class="row g-4">
+                <div class="col-md-3">
+                    <div class="text-muted small">Student ID</div>
+                    <div class="fw-semibold">@Model.StudentId</div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="text-muted small">Member ID</div>
+                    <div class="fw-semibold">
+                        @(string.IsNullOrWhiteSpace(Model.MemberId) ? "Not assigned" : Model.MemberId)
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="text-muted small">Name</div>
+                    <div class="fw-semibold">@Model.Name</div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="text-muted small">Address</div>
+                    <div class="fw-semibold">@Model.Address</div>
+                </div>
             </div>
 
+            @if (!Model.HasValidMemberId)
+            {
+                <div class="alert alert-warning mt-3 mb-0">
+                    You cannot apply for books until a valid Member ID is assigned.
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- ===== Apply For Books ===== -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="card-title mb-0">Apply For Books</h5>
+                <small class="text-muted">Stock updates automatically when you apply</small>
+            </div>
+        </div>
+
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th style="width:120px;">Book ID</th>
+                            <th>Title</th>
+                            <th style="width:180px;">Available Copies</th>
+                            <th style="width:180px;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var b in Model.Books)
+                        {
+                            var outOfStock = b.AvailableCopies <= 0;
+                            var disabled = (!Model.HasValidMemberId) || outOfStock || b.IsApplied;
+
+                            <tr>
+                                <td>@b.BookId</td>
+                                <td>@b.Title</td>
+                                <td>
+                                    @if (outOfStock)
+                                    {
+                                        <span class="badge bg-danger">0</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success">@b.AvailableCopies</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (b.IsApplied)
+                                    {
+                                        <button class="btn btn-outline-secondary btn-sm" disabled>Applied</button>
+                                    }
+                                    else
+                                    {
+                                        <form asp-action="Apply" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="bookId" value="@b.BookId" />
+
+                                            <button type="submit"
+                                                    class="btn btn-primary btn-sm"
+                                                    @(disabled ? "disabled" : "")>
+                                                Apply
+                                            </button>
+                                        </form>
+
+                                        @if (outOfStock)
+                                        {
+                                            <span class="text-muted ms-2 small">Out of stock</span>
+                                        }
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Recent Issues ===== -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-white">
+            <h5 class="card-title mb-0">Recent Issues</h5>
+        </div>
+
+        <div class="card-body">
             @if (Model.RecentIssues == null || !Model.RecentIssues.Any())
             {
-                <p class="text-muted">You have no issued books yet.</p>
+                <p class="text-muted mb-0">No issues yet.</p>
             }
             else
             {
                 <div class="table-responsive">
-                    <table class="table">
+                    <table class="table table-hover align-middle">
                         <thead>
                             <tr>
                                 <th>Book</th>
-                                <th>Issued On</th>
-                                <th>Status</th>
-                                <th>Return Date</th>
+                                <th style="width:180px;">Issued</th>
+                                <th style="width:140px;">Status</th>
+                                <th style="width:120px;">Fine</th>
                             </tr>
                         </thead>
                         <tbody>
-                        @foreach (var issue in Model.RecentIssues)
-                        {
-                            <tr>
-                                <td>@issue.Book?.Title</td>
-                                <td>@issue.IssueDate.ToShortDateString()</td>
-                                <td>@issue.Status</td>
-                                <td>@(issue.ReturnDate?.ToShortDateString() ?? "-")</td>
-                            </tr>
-                        }
-                        </tbody>
-                    </table>
-                </div>
-            }
-        </div>
-    </div>
-
-    <!-- Premium collection preview -->
-    <div class="card mt-2">
-        <div class="card-body">
-            <div class="section-header">
-                <div>
-                    <h3 class="section-title">Premium Collection Preview</h3>
-                    <p class="text-muted mb-0">A quick look at some premium titles.</p>
-                </div>
-                <a asp-action="PremiumCollection" class="link-small">
-                    View Premium Collection
-                </a>
-            </div>
-
-            @if (Model.PremiumBooksSample == null || !Model.PremiumBooksSample.Any())
-            {
-                <p class="text-muted">No premium books available yet.</p>
-            }
-            else
-            {
-                <div class="table-responsive">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Title</th>
-                                <th>Author</th>
-                                <th>Category</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        @foreach (var book in Model.PremiumBooksSample)
-                        {
-                            <tr>
-                                <td>@book.Title</td>
-                                <td>@book.Author</td>
-                                <td>@book.Category</td>
-                            </tr>
-                        }
+                            @foreach (var i in Model.RecentIssues)
+                            {
+                                <tr>
+                                    <td>@i.Book?.Title</td>
+                                    <td>@i.IssueDate.ToString("yyyy-MM-dd")</td>
+                                    <td><span class="badge bg-info text-dark">@i.Status</span></td>
+                                    <td>@i.FineAmount.ToString("0.00")</td>
+                                </tr>
+                            }
                         </tbody>
                     </table>
                 </div>

@@ -123,7 +123,6 @@ namespace LibraryManagementSystem.Controllers
 
         // =========================
         //  REGISTER STUDENT (POST)
-        // =========================
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
@@ -132,11 +131,21 @@ namespace LibraryManagementSystem.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
+            // ✅ Generate StudentId + MemberId
+            var studentId = "STU-" + Guid.NewGuid().ToString("N").Substring(0, 6).ToUpper();
+            var memberId = "MID-" + Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper();
+
             var user = new ApplicationUser
             {
                 UserName = model.Email,
                 Email = model.Email,
-                EmailConfirmed = true
+                EmailConfirmed = true,
+
+                // ✅ new fields
+                StudentId = studentId,
+                MemberId = memberId,
+                Name = model.FullName,
+                Address = model.Address
             };
 
             var result = await _userManager.CreateAsync(user, model.Password);
@@ -144,33 +153,36 @@ namespace LibraryManagementSystem.Controllers
             if (!result.Succeeded)
             {
                 foreach (var error in result.Errors)
-                {
                     ModelState.AddModelError(string.Empty, error.Description);
-                }
+
                 return View(model);
             }
 
             // Ensure Student role exists
             const string studentRole = "Student";
             if (!await _roleManager.RoleExistsAsync(studentRole))
-            {
                 await _roleManager.CreateAsync(new IdentityRole(studentRole));
-            }
 
-            // Add new user to Student role
-            var roleResult = await _userManager.AddToRoleAsync(user, studentRole);
-            if (!roleResult.Succeeded)
+            await _userManager.AddToRoleAsync(user, studentRole);
+
+            // ✅ Create membership record too (so MemberId exists)
+            _context.Memberships.Add(new Membership
             {
-                foreach (var error in roleResult.Errors)
-                {
-                    ModelState.AddModelError(string.Empty, error.Description);
-                }
-                return View(model);
-            }
+                UserId = user.Id,
+                StudentEmail = user.Email!,
+                MembershipType = model.MembershipType,
+                IsActive = true,
+                MembershipBarcode = memberId,
+                StartDate = DateTime.UtcNow,
+                ExpiryDate = DateTime.UtcNow.AddYears(1)
+            });
+
+            await _context.SaveChangesAsync();
 
             await _signInManager.SignInAsync(user, isPersistent: false);
             return RedirectToAction("Dashboard", "Student");
         }
+
 
         // =========================
         //  LOGOUT

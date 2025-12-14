@@ -9,6 +9,10 @@ namespace LibraryManagementSystem.Models
         public string FullName { get; set; } = string.Empty;
 
         [Required]
+        [Display(Name = "Address")]
+        public string Address { get; set; } = string.Empty;
+
+        [Required]
         [EmailAddress]
         public string Email { get; set; } = string.Empty;
 
@@ -23,6 +27,6 @@ namespace LibraryManagementSystem.Models
 
         [Required]
         [Display(Name = "Membership Type")]
-        public string MembershipType { get; set; } = "Standard"; // Standard / Premium
+        public string MembershipType { get; set; } = "Standard";
     }
 }

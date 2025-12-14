@@ -131,6 +131,35 @@ namespace LibraryManagementSystem.Controllers
                 issue.Book.AvailableCopies += 1;
                 _context.Books.Update(issue.Book);
             }
+            // Mark as returned
+            issue.ReturnDate = DateTime.UtcNow;
+            issue.Status = "Returned";
+
+            // Increase available copies
+            if (issue.Book != null)
+            {
+                issue.Book.AvailableCopies += 1;
+                _context.Books.Update(issue.Book);
+            }
+
+            // ✅ Insert into Returns table (MemberId from MembershipBarcode)
+            var membership = await _context.Memberships
+                .FirstOrDefaultAsync(m => m.StudentEmail == issue.StudentEmail && m.IsActive);
+
+            var memberId = membership?.MembershipBarcode ?? "NOT_ASSIGNED";
+
+            _context.BookReturns.Add(new BookReturn
+            {
+                MemberId = memberId,
+                BookId = issue.BookId,
+                ReturnedAt = DateTime.UtcNow
+            });
+
+            await _context.SaveChangesAsync();
+
+            TempData["IssueMessage"] = $"Book '{issue.Book?.Title}' returned by {issue.StudentEmail}.";
+            return RedirectToAction(nameof(Index));
+
 
             // Fine calculation will be added later in Fine module
             await _context.SaveChangesAsync();

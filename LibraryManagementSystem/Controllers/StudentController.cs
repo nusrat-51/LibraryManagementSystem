@@ -3,7 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using LibraryManagementSystem.Data;
 using LibraryManagementSystem.Models;
-using LibraryManagementSystem.ViewModels.Student; // for MyIssueVM
+using LibraryManagementSystem.ViewModels.Student;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -21,291 +21,148 @@ namespace LibraryManagementSystem.Controllers
         }
 
         // ========================
-        //  STUDENT DASHBOARD
+        // STUDENT DASHBOARD (Apply + Stock auto update)
         // ========================
         [HttpGet]
         public async Task<IActionResult> Dashboard()
         {
             var email = User.Identity?.Name;
-            if (string.IsNullOrEmpty(email))
-            {
+            if (string.IsNullOrWhiteSpace(email))
                 return Unauthorized();
-            }
 
-            // Friendly name from email
-            var userNamePart = email.Split('@')[0];
-            var friendlyName = char.ToUpper(userNamePart[0]) + userNamePart.Substring(1);
-
-            // Membership from DB
             var membership = await _context.Memberships
+                .AsNoTracking()
                 .FirstOrDefaultAsync(m => m.StudentEmail == email && m.IsActive);
 
-            bool isPremium = membership?.MembershipType == "Premium";
+            // Friendly name from email
+            var namePart = email.Split('@')[0];
+            var friendlyName = char.ToUpper(namePart[0]) + namePart.Substring(1);
 
-            var today = DateTime.UtcNow.Date;
-
-            // All issue records for this student
-            var studentIssuesQuery = _context.IssueRecords
-                .Include(i => i.Book)
-                .Where(i => i.StudentEmail == email);
-
-            // Current issued (not returned)
-            var currentIssues = await studentIssuesQuery
-                .Where(i => i.Status == "Issued")
+            // BookIds already issued by this student (disable Apply)
+            var issuedBookIds = await _context.IssueRecords
+                .AsNoTracking()
+                .Where(i => i.StudentEmail == email && i.Status == "Issued")
+                .Select(i => i.BookId)
                 .ToListAsync();
 
-            // Overdue: more than 14 days and not returned
-            var overdueCount = currentIssues.Count(i =>
-                !i.ReturnDate.HasValue &&
-                i.IssueDate.AddDays(14).Date < today);
+            // All books for apply list
+            var books = await _context.Books
+                .AsNoTracking()
+                .OrderBy(b => b.Title)
+                .ToListAsync();
 
-            // Total books in library
-            var totalBooksCount = await _context.Books.CountAsync();
-
-            // Total unpaid fine
-            var totalUnpaidFine = await _context.Fines
-                .Where(f => f.StudentEmail == email && !f.IsPaid)
-                .SumAsync(f => (decimal?)f.Amount) ?? 0m;
-
-            // Recent issues (latest 5)
-            var recentIssues = await studentIssuesQuery
+            // Recent issues table (latest 5)
+            var recentIssues = await _context.IssueRecords
+                .AsNoTracking()
+                .Include(i => i.Book)
+                .Where(i => i.StudentEmail == email)
                 .OrderByDescending(i => i.IssueDate)
                 .Take(5)
                 .ToListAsync();
 
-            // Premium books sample (first 3 premium category)
-            var premiumBooksSample = await _context.Books
-                .Where(b => b.Category == "Premium")
-                .OrderBy(b => b.Title)
-                .Take(3)
-                .ToListAsync();
-
-            var vm = new StudentDashboardViewModel
+            var vm = new StudentApplyDashboardVM
             {
-                // Identity info
-                StudentName = friendlyName,
-                Email = email,
+                StudentId = $"STU-{namePart.ToUpper()}",
+                MemberId = membership?.MembershipBarcode,
+                Name = friendlyName,
+                Address = "Not set",
+                HasValidMemberId = membership != null && !string.IsNullOrWhiteSpace(membership.MembershipBarcode),
 
-                // Membership info
-                MembershipType = membership?.MembershipType ?? "Standard",
-                IsMembershipActive = membership?.IsActive ?? false,
-                HasPremiumAccess = isPremium,
-                MembershipBarcode = membership?.MembershipBarcode ?? "Not assigned",
-                MembershipExpiry = membership?.ExpiryDate,
+                CurrentIssuedCount = issuedBookIds.Count,
+                OverdueCount = 0,
+                TotalBooksCount = books.Count,
+                TotalUnpaidFine = 0,
 
-                // Summary cards
-                CurrentIssuedCount = currentIssues.Count,
-                OverdueCount = overdueCount,
-                TotalBooksCount = totalBooksCount,
-                TotalUnpaidFine = totalUnpaidFine,
-
-                // Tables
-                RecentIssues = recentIssues,
-                PremiumBooksSample = premiumBooksSample
-            };
-
-            return View(vm);
-        }
-
-        // ========================
-        //  MY ISSUED BOOKS
-        // ========================
-        [HttpGet]
-        public async Task<IActionResult> MyIssues()
-        {
-            var email = User.Identity?.Name;
-            if (string.IsNullOrEmpty(email))
-            {
-                return Unauthorized();
-            }
-
-            var issues = await _context.IssueRecords
-                .Include(i => i.Book)
-                .Where(i => i.StudentEmail == email)
-                .OrderByDescending(i => i.IssueDate)
-                .Select(i => new MyIssueVM
+                Books = books.Select(b => new StudentBookVM
                 {
-                    BookTitle = i.Book.Title,
-                    StudentEmail = i.StudentEmail,
-                    IssueDate = i.IssueDate,
-                    ReturnDate = i.ReturnDate,
-                    Status = i.Status,
-                    FineAmount = i.FineAmount
-                })
-                .ToListAsync();
+                    BookId = b.Id,
+                    Title = b.Title,
+                    AvailableCopies = b.AvailableCopies,
+                    IsApplied = issuedBookIds.Contains(b.Id)
+                }).ToList(),
 
-            return View(issues); // Views/Student/MyIssues.cshtml
-        }
-
-        // ========================
-        //  VIEW BOOKS (READ-ONLY)
-        // ========================
-        [HttpGet]
-        public async Task<IActionResult> ViewBooks()
-        {
-            var books = await _context.Books
-                .OrderBy(b => b.Title)
-                .ToListAsync();
-
-            return View(books); // Views/Student/ViewBooks.cshtml
-        }
-
-        // =========================
-        //  PAY FINE PAGE (GET)
-        // =========================
-        [HttpGet]
-        public async Task<IActionResult> PayFine()
-        {
-            var email = User.Identity?.Name;
-            if (string.IsNullOrEmpty(email))
-            {
-                return Unauthorized();
-            }
-
-            var unpaid = await _context.Fines
-                .Include(f => f.IssueRecord)
-                    .ThenInclude(ir => ir.Book)
-                .Where(f => f.StudentEmail == email && !f.IsPaid)
-                .ToListAsync();
-
-            var paid = await _context.Fines
-                .Where(f => f.StudentEmail == email && f.IsPaid)
-                .OrderByDescending(f => f.PaidOn)
-                .Take(10)
-                .ToListAsync();
-
-            var vm = new PayFineViewModel
-            {
-                UnpaidFines = unpaid,
-                PaidHistory = paid,
-                TotalUnpaid = unpaid.Sum(f => f.Amount)
+                RecentIssues = recentIssues
             };
 
             return View(vm);
         }
 
-        // =========================
-        //  PAY FINE ONLINE (POST)
-        // =========================
+        // ========================
+        // APPLY (decrease stock by 1)
+        // ========================
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> PayFineOnline(int id)
+        public async Task<IActionResult> Apply(int bookId)
         {
             var email = User.Identity?.Name;
-            if (string.IsNullOrEmpty(email))
-            {
+            if (string.IsNullOrWhiteSpace(email))
                 return Unauthorized();
-            }
-
-            var fine = await _context.Fines
-                .FirstOrDefaultAsync(f => f.Id == id &&
-                                          f.StudentEmail == email &&
-                                          !f.IsPaid);
-
-            if (fine == null)
-            {
-                return NotFound();
-            }
-
-            // Mock payment
-            fine.IsPaid = true;
-            fine.PaidOn = DateTime.UtcNow;
-            fine.PaymentReference = "PAY-" + Guid.NewGuid().ToString("N").Substring(0, 8);
-
-            await _context.SaveChangesAsync();
-
-            TempData["FinePaidMessage"] =
-                $"Fine #{fine.Id} paid successfully (Ref: {fine.PaymentReference}).";
-
-            return RedirectToAction(nameof(PayFine));
-        }
-
-        // =========================
-        //  PREMIUM COLLECTION PAGE
-        // =========================
-        [HttpGet]
-        public async Task<IActionResult> PremiumCollection()
-        {
-            var premiumBooks = await _context.Books
-                .Where(b => b.Category == "Premium")
-                .OrderBy(b => b.Title)
-                .ToListAsync();
-
-            return View(premiumBooks);
-        }
-
-        // =========================
-        //  UPGRADE MEMBERSHIP
-        // =========================
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> UpgradeToPremium()
-        {
-            var email = User.Identity?.Name;
-            if (string.IsNullOrEmpty(email))
-            {
-                return Unauthorized();
-            }
 
             var membership = await _context.Memberships
-                .FirstOrDefaultAsync(m => m.StudentEmail == email);
+                .FirstOrDefaultAsync(m => m.StudentEmail == email && m.IsActive);
 
-            if (membership == null)
+            // Requirement: block apply if no valid MemberId
+            if (membership == null || string.IsNullOrWhiteSpace(membership.MembershipBarcode))
             {
-                membership = new Membership
+                TempData["Error"] = "You cannot apply for a book without a valid Member ID.";
+                return RedirectToAction(nameof(Dashboard));
+            }
+
+            // Prevent duplicate apply
+            var alreadyIssued = await _context.IssueRecords.AnyAsync(i =>
+                i.StudentEmail == email &&
+                i.BookId == bookId &&
+                i.Status == "Issued");
+
+            if (alreadyIssued)
+            {
+                TempData["Error"] = "You already applied for this book.";
+                return RedirectToAction(nameof(Dashboard));
+            }
+
+            using var tx = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                // Lock and re-check stock inside transaction
+                var book = await _context.Books.FirstOrDefaultAsync(b => b.Id == bookId);
+                if (book == null)
                 {
+                    TempData["Error"] = "Book not found.";
+                    return RedirectToAction(nameof(Dashboard));
+                }
+
+                if (book.AvailableCopies <= 0)
+                {
+                    TempData["Error"] = "This book is out of stock.";
+                    return RedirectToAction(nameof(Dashboard));
+                }
+
+                book.AvailableCopies -= 1;
+
+                var issue = new IssueRecord
+                {
+                    BookId = bookId,
                     StudentEmail = email,
-                    MembershipType = "Premium",
-                    IsActive = true,
-                    MembershipBarcode = GenerateMembershipBarcode(),
-                    ExpiryDate = DateTime.Today.AddYears(1),
+                    IssueDate = DateTime.UtcNow,
+                    Status = "Issued",
+                    FineAmount = 0
                 };
 
-                _context.Memberships.Add(membership);
+                _context.IssueRecords.Add(issue);
+                await _context.SaveChangesAsync();
+
+                await tx.CommitAsync();
+
+                TempData["Success"] = $"Applied successfully for '{book.Title}'.";
+                return RedirectToAction(nameof(Dashboard));
             }
-            else
+            catch
             {
-                membership.MembershipType = "Premium";
-                membership.IsActive = true;
-                membership.MembershipBarcode = GenerateMembershipBarcode();
-                membership.ExpiryDate = DateTime.Today.AddYears(1);
+                await tx.RollbackAsync();
+                TempData["Error"] = "Could not apply right now. Please try again.";
+                return RedirectToAction(nameof(Dashboard));
             }
-
-            await _context.SaveChangesAsync();
-
-            TempData["MembershipMessage"] = "Your membership has been upgraded to Premium.";
-            return RedirectToAction(nameof(Dashboard));
         }
-
-        private string GenerateMembershipBarcode()
-        {
-            var random = new Random();
-            var number = random.Next(100000, 999999);
-            return $"LM-{DateTime.Now:yyyy}-{number}";
-        }
-    }
-
-    // View-model for dashboard NOW LIVES HERE
-    public class StudentDashboardViewModel
-    {
-        public string StudentName { get; set; } = string.Empty;
-        public string Email { get; set; } = string.Empty;
-
-        public string MembershipType { get; set; } = "Standard";
-        public bool IsMembershipActive { get; set; }
-        public bool HasPremiumAccess { get; set; }
-        public string MembershipBarcode { get; set; } = "Not assigned";
-        public DateTime? MembershipExpiry { get; set; }
-
-        public int CurrentIssuedCount { get; set; }
-        public int OverdueCount { get; set; }
-        public int TotalBooksCount { get; set; }
-        public decimal TotalUnpaidFine { get; set; }
-
-        public System.Collections.Generic.IList<IssueRecord> RecentIssues { get; set; }
-            = new System.Collections.Generic.List<IssueRecord>();
-
-        public System.Collections.Generic.IList<Book> PremiumBooksSample { get; set; }
-            = new System.Collections.Generic.List<Book>();
     }
 }

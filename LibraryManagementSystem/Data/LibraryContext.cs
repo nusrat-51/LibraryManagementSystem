@@ -11,13 +11,23 @@ namespace LibraryManagementSystem.Data
         {
         }
 
+        // =====================
+        // CORE TABLES
+        // =====================
         public DbSet<Book> Books { get; set; }
         public DbSet<IssueRecord> IssueRecords { get; set; }
-
-        public DbSet<Reservation> Reservations { get; set; }
-        public DbSet<Fine> Fines { get; set; }
         public DbSet<Membership> Memberships { get; set; }
+        public DbSet<Fine> Fines { get; set; }
 
-        // You DO NOT put DbSet<ApplicationUser> here. Identity handles that automatically.
+        // =====================
+        // REQUIRED FIXES
+        // =====================
+        public DbSet<Reservation> Reservations { get; set; }
+        public DbSet<BookReturn> BookReturns { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder builder)
+        {
+            base.OnModelCreating(builder);
+        }
     }
 }
