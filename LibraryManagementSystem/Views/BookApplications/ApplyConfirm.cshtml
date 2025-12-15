@@ -1,0 +1,31 @@
+﻿@model LibraryManagementSystem.ViewModels.Student.BookApplyVM
+@{
+    Layout = "~/Views/Shared/_StudentLayout.cshtml";
+    ViewData["Title"] = "Confirm Application";
+}
+
+<h2 class="mb-3">Confirm Application</h2>
+
+<form asp-action="Submit" method="post" class="card p-4 shadow-sm">
+    @Html.AntiForgeryToken()
+
+    <div class="mb-2"><b>Book ID:</b> @Model.BookId</div>
+    <div class="mb-2"><b>Title:</b> @Model.Title</div>
+    <div class="mb-2"><b>Author:</b> @Model.Author</div>
+    <div class="mb-2"><b>Normal ID:</b> @Model.StudentId</div>
+
+    <div class="mb-2"><b>Issue Date:</b> @Model.IssueDate.ToString("yyyy-MM-dd")</div>
+    <div class="mb-3"><b>Return Date:</b> @Model.ReturnDate.ToString("yyyy-MM-dd")</div>
+
+    <input type="hidden" asp-for="BookId" />
+    <input type="hidden" asp-for="Title" />
+    <input type="hidden" asp-for="Author" />
+    <input type="hidden" asp-for="StudentId" />
+    <input type="hidden" asp-for="IssueDate" />
+    <input type="hidden" asp-for="ReturnDate" />
+
+    <div class="text-danger">@Html.ValidationSummary()</div>
+
+    <button class="btn btn-success">Submit</button>
+    <a asp-action="Apply" asp-route-bookId="@Model.BookId" class="btn btn-outline-secondary ms-2">Back</a>
+</form>

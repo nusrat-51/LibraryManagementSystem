@@ -1,0 +1,60 @@
+﻿@model List<LibraryManagementSystem.Models.BookApplication>
+
+@{
+    Layout = "~/Views/Shared/_StudentLayout.cshtml";
+    ViewData["Title"] = "My Applications";
+}
+
+<h2 class="mb-3">My Applications</h2>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        @if (Model == null || !Model.Any())
+        {
+            <div class="text-muted">No applications yet.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Book</th>
+                            <th>Issue</th>
+                            <th>Return</th>
+                            <th>Applied At</th>
+                            <th style="width:160px;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var a in Model)
+                        {
+                            <tr>
+                                <td>@a.Id</td>
+                                <td>@(a.Book?.Title ?? ("Book #" + a.BookId))</td>
+                                <td>@a.IssueDate.ToString("yyyy-MM-dd")</td>
+                                <td>@a.ReturnDate.ToString("yyyy-MM-dd")</td>
+                                <td>@a.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
+                                <td>
+                                    <a asp-action="EditApplication" asp-route-id="@a.Id" class="btn btn-sm btn-outline-primary">
+                                        Edit Dates
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>

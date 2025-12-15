@@ -24,6 +24,7 @@ namespace LibraryManagementSystem.Data
         // =====================
         public DbSet<Reservation> Reservations { get; set; }
         public DbSet<BookReturn> BookReturns { get; set; }
+        public DbSet<BookApplication> BookApplications { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

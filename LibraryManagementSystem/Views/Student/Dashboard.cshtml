@@ -145,16 +145,13 @@
                                     }
                                     else
                                     {
-                                        <form asp-action="Apply" method="post" class="d-inline">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="bookId" value="@b.BookId" />
-
-                                            <button type="submit"
-                                                    class="btn btn-primary btn-sm"
-                                                    @(disabled ? "disabled" : "")>
-                                                Apply
-                                            </button>
-                                        </form>
+                                        <!--  OPEN APPLY FORM (GET) -->
+                                        <a class="btn btn-primary btn-sm @(disabled ? "disabled" : "")"
+                                           asp-controller="Student"
+                                           asp-action="Apply"
+                                           asp-route-bookId="@b.BookId">
+                                            Apply
+                                        </a>
 
                                         @if (outOfStock)
                                         {

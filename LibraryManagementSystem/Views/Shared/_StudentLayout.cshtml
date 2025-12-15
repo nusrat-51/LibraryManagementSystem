@@ -6,20 +6,16 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Student - Library Management System</title>
 
-    <!-- Bootstrap -->
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
 
-    <!-- Same CSS as librarian -->
     <link rel="stylesheet" href="~/css/dashboard.css" asp-append-version="true" />
 
     @RenderSection("Styles", required: false)
 
     <style>
-        /* Hamburger toggle button */
         .sidebar-toggle-btn {
             position: fixed;
             top: 15px;
@@ -33,18 +29,17 @@
             cursor: pointer;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
             transition: 0.2s ease;
-            display: none; /* hidden by default (sidebar open) */
+            display: none;
         }
 
         body.sidebar-closed .sidebar-toggle-btn {
-            display: block; /* show only when sidebar is hidden */
+            display: block;
         }
 
         .sidebar-toggle-btn:hover {
             background: #f4f4f4;
         }
 
-        /* Layout */
         .layout {
             display: flex;
             min-height: 100vh;
@@ -61,7 +56,6 @@
             padding-left: 20px;
         }
 
-        /* When sidebar is hidden */
         body.sidebar-closed .sidebar {
             margin-left: -260px;
         }
@@ -71,13 +65,12 @@
         }
     </style>
 </head>
-
 <body>
-    <!-- Hamburger button -->
-    <button id="sidebarToggle" class="sidebar-toggle-btn" type="button">☰</button>
+
+    <button id="sidebarToggle" class="sidebar-toggle-btn">☰</button>
 
     <div class="layout" data-theme="light">
-        <!-- SIDEBAR -->
+
         <aside class="sidebar">
             <div class="brand">
                 <span class="brand-logo">📚</span>
@@ -86,31 +79,30 @@
 
             <nav class="menu">
                 <a asp-controller="Student" asp-action="Dashboard" class="menu-item">Dashboard</a>
-                <a asp-controller="Student" asp-action="MyIssues" class="menu-item">My Issued Books</a>
-                <a asp-controller="Student" asp-action="ViewBooks" class="menu-item">View Books (read-only)</a>
+                <a asp-controller="BookApplications" asp-action="History" class="menu-item">Application History</a>
+                <a asp-controller="Student" asp-action="MyIssues" class="menu-item">My Issues</a>
+                <a asp-controller="Student" asp-action="ViewBooks" class="menu-item">View Books</a>
                 <a asp-controller="Account" asp-action="Logout" class="menu-item">Logout</a>
             </nav>
 
             <div class="theme-section">
                 <div class="theme-label">Theme</div>
-                <button id="themeToggle" class="theme-toggle-button" type="button">Light / Dark</button>
+                <button id="themeToggle" class="theme-toggle-button">Light / Dark</button>
             </div>
         </aside>
 
-        <!-- MAIN CONTENT -->
-        <main class="main" role="main">
+        <div class="main">
             @RenderBody()
-        </main>
+        </div>
+
     </div>
 
     <footer class="footer">
         © 2025 Library Management System
     </footer>
 
-    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- Sidebar toggle script -->
     <script>
         (function () {
             var toggleBtn = document.getElementById("sidebarToggle");
@@ -121,5 +113,6 @@
     </script>
 
     @RenderSection("Scripts", required: false)
+
 </body>
 </html>
