@@ -1,66 +1,61 @@
-﻿@model List<LibraryManagementSystem.Models.BookApplication>
+﻿@model IEnumerable<LibraryManagementSystem.Models.BookApplication>
 
 @{
-    Layout = "~/Views/Shared/_Layout.cshtml"; // works for all roles
+    Layout = "~/Views/Shared/_Layout.cshtml"; // visible to all (Student/Librarian/Admin)
     ViewData["Title"] = "Application History";
 }
 
-<div class="container-fluid py-3">
-    <h2 class="mb-3">Application History</h2>
+<h2 class="mb-3">Application History</h2>
 
-    @if (TempData["Success"] != null)
-    {
-        <div class="alert alert-success">@TempData["Success"]</div>
-    }
-    @if (TempData["Error"] != null)
-    {
-        <div class="alert alert-danger">@TempData["Error"]</div>
-    }
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
 
-    <div class="card shadow-sm">
-        <div class="card-header bg-white">
-            <strong>All Applications</strong>
-        </div>
-
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead>
-                        <tr>
-                            <th>App ID</th>
-                            <th>Book</th>
-                            <th>Book ID</th>
-                            <th>Student ID</th>
-                            <th>Issue Date</th>
-                            <th>Return Date</th>
-                            <th>Created</th>
-                            <th style="width:140px;">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var a in Model)
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Book</th>
+                <th>Student Email</th>
+                <th>Student ID</th>
+                <th>Issue Date</th>
+                <th>Return Date</th>
+                <th style="width:240px;">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var a in Model)
+            {
+                <tr>
+                    <td>@a.Id</td>
+                    <td>@a.Book?.Title</td>
+                    <td>@a.StudentEmail</td>
+                    <td>@a.StudentId</td>
+                    <td>@a.IssueDate.ToString("yyyy-MM-dd")</td>
+                    <td>@a.ReturnDate.ToString("yyyy-MM-dd")</td>
+                    <td>
+                        @if (User.Identity?.IsAuthenticated == true && User.IsInRole("Student") && User.Identity?.Name == a.StudentEmail)
                         {
-                            <tr>
-                                <td>@a.Id</td>
-                                <td>@(a.Book?.Title ?? "-")</td>
-                                <td>@a.BookId</td>
-                                <td>@a.StudentId</td>
-                                <td>@a.IssueDate.ToString("yyyy-MM-dd")</td>
-                                <td>@a.ReturnDate.ToString("yyyy-MM-dd")</td>
-                                <td>@a.CreatedAt.ToString("yyyy-MM-dd")</td>
-                                <td>
-                                    <a class="btn btn-sm btn-outline-primary"
-                                       asp-action="Edit"
-                                       asp-route-id="@a.Id">
-                                        Edit Dates
-                                    </a>
-                                </td>
-                            </tr>
+                            <a class="btn btn-sm btn-warning" asp-action="Edit" asp-route-id="@a.Id">Edit Dates</a>
                         }
-                    </tbody>
-                </table>
-            </div>
-            <small class="text-muted">Note: Only the student who applied can edit their Issue/Return dates.</small>
-        </div>
-    </div>
+
+                        @if (User.Identity?.IsAuthenticated == true && User.IsInRole("Admin"))
+                        {
+                            <form asp-action="Delete" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@a.Id" />
+                                <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
 </div>

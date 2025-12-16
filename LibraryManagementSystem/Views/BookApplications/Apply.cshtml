@@ -1,64 +1,60 @@
-﻿@{
+﻿@model LibraryManagementSystem.Models.BookApplication
+
+@{
     Layout = "~/Views/Shared/_StudentLayout.cshtml";
-    ViewData["Title"] = "Apply For Book";
+    ViewData["Title"] = "Apply";
 }
 
-<div class="container-fluid py-3">
-    <h2 class="mb-3">Apply For Book</h2>
+<div class="card shadow-sm">
+    <div class="card-header bg-white">
+        <h5 class="mb-0">Apply for Book</h5>
+        <small class="text-muted">Confirm details and submit</small>
+    </div>
 
-    <div class="card shadow-sm">
-        <div class="card-header bg-white">
-            <strong>Book Application</strong>
-        </div>
-        <div class="card-body">
+    <div class="card-body">
+        <form asp-action="Apply" method="post">
+            @Html.AntiForgeryToken()
 
-            <form asp-action="Apply" method="post">
-                @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="BookId" />
+            <input type="hidden" asp-for="StudentEmail" />
+            <input type="hidden" asp-for="StudentId" />
 
-                <input type="hidden" name="bookId" value="@ViewBag.BookId" />
-                <input type="hidden" name="studentId" value="@ViewBag.StudentId" />
-
-                <div class="row g-3">
-
-                    <div class="col-md-4">
-                        <label class="form-label">Book ID</label>
-                        <input class="form-control" value="@ViewBag.BookId" readonly />
-                    </div>
-
-                    <div class="col-md-4">
-                        <label class="form-label">Normal ID (Student ID)</label>
-                        <input class="form-control" value="@ViewBag.StudentId" readonly />
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label">Title</label>
-                        <input class="form-control" value="@ViewBag.Title" readonly />
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label">Author</label>
-                        <input class="form-control" value="@ViewBag.Author" readonly />
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label">Issue Date</label>
-                        <input type="date" class="form-control" name="issueDate" value="@ViewBag.IssueDate" />
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="form-label">Return Date</label>
-                        <input type="date" class="form-control" name="returnDate" value="@ViewBag.ReturnDate" />
-                    </div>
-
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Book ID</label>
+                    <input class="form-control" value="@Model.BookId" readonly />
                 </div>
 
-                <div class="mt-4 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary">Submit</button>
-                    <a asp-controller="Student" asp-action="Dashboard" class="btn btn-outline-secondary">Cancel</a>
+                <div class="col-md-6">
+                    <label class="form-label">Normal ID (Student ID)</label>
+                    <input class="form-control" value="@Model.StudentId" readonly />
                 </div>
 
-            </form>
+                <div class="col-md-6">
+                    <label class="form-label">Title</label>
+                    <input class="form-control" value="@Model.Book?.Title" readonly />
+                </div>
 
-        </div>
+                <div class="col-md-6">
+                    <label class="form-label">Author</label>
+                    <input class="form-control" value="@Model.Book?.Author" readonly />
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Issue Date</label>
+                    <input class="form-control" asp-for="IssueDate" type="date" />
+                </div>
+
+                <div class="col-md-6">
+                    <label class="form-label">Return Date</label>
+                    <input class="form-control" asp-for="ReturnDate" type="date" />
+                </div>
+            </div>
+
+            <div class="mt-4 d-flex gap-2">
+                <button class="btn btn-primary" type="submit">Submit</button>
+                <a class="btn btn-secondary" asp-controller="Student" asp-action="Dashboard">Back</a>
+            </div>
+        </form>
     </div>
 </div>

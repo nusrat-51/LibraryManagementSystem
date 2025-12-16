@@ -147,11 +147,12 @@
                                     {
                                         <!--  OPEN APPLY FORM (GET) -->
                                         <a class="btn btn-primary btn-sm @(disabled ? "disabled" : "")"
-                                           asp-controller="Student"
+                                           asp-controller="BookApplications"
                                            asp-action="Apply"
                                            asp-route-bookId="@b.BookId">
                                             Apply
                                         </a>
+
 
                                         @if (outOfStock)
                                         {

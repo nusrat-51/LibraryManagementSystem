@@ -6,25 +6,27 @@ namespace LibraryManagementSystem.Models
 {
     public class BookApplication
     {
-        [Key]
         public int Id { get; set; }
 
-        // Required fields (as per requirement)
+        [Required]
         public int BookId { get; set; }
 
+        // your project uses email for identity
         [Required]
-        public string StudentId { get; set; } = ""; // store User.Identity.Name (email)
+        public string StudentEmail { get; set; } = string.Empty;
 
-        [DataType(DataType.Date)]
+        // requirement: Student ID / Normal ID
+        [Required]
+        public string StudentId { get; set; } = string.Empty;
+
+        [Required]
         public DateTime IssueDate { get; set; }
 
-        [DataType(DataType.Date)]
+        [Required]
         public DateTime ReturnDate { get; set; }
 
-        // extra (safe)
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        // navigation (optional but useful)
         [ForeignKey(nameof(BookId))]
         public Book? Book { get; set; }
     }

@@ -100,6 +100,11 @@ namespace LibraryManagementSystem.Controllers
             TempData["Success"] = "Book added successfully!";
             return RedirectToAction(nameof(ManageBooks));
         }
+        [HttpGet]
+        public IActionResult Create()
+        {
+            return RedirectToAction(nameof(CreateBook));
+        }
 
         // ===========================
         //  EDIT BOOK (GET)

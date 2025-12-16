@@ -1,76 +1,67 @@
-﻿@model List<LibraryManagementSystem.Models.BookApplication>
+﻿@model IEnumerable<LibraryManagementSystem.Models.BookApplication>
 
 @{
-    // choose layout based on role (optional)
-    Layout = User.IsInRole("Admin")
-        ? "~/Views/Shared/_AdminLayout.cshtml"
-        : User.IsInRole("Librarian")
-            ? "~/Views/Shared/_LibrarianLayout.cshtml"
-            : "~/Views/Shared/_StudentLayout.cshtml";
-
-    ViewData["Title"] = "All Book Applications";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Application History";
 }
 
-<h2 class="mb-3">All Book Applications</h2>
+<h3 class="mb-3">Book Application History</h3>
 
 @if (TempData["Success"] != null)
 {
     <div class="alert alert-success">@TempData["Success"]</div>
 }
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
 
 <div class="card shadow-sm">
     <div class="card-body">
-        @if (Model == null || !Model.Any())
-        {
-            <div class="text-muted">No applications found.</div>
-        }
-        else
-        {
-            <div class="table-responsive">
-                <table class="table table-hover align-middle">
-                    <thead>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>App ID</th>
+                        <th>Book</th>
+                        <th>Student</th>
+                        <th>Issue Date</th>
+                        <th>Return Date</th>
+                        <th style="width:220px;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var a in Model)
+                    {
                         <tr>
-                            <th>ID</th>
-                            <th>Book</th>
-                            <th>Student</th>
-                            <th>Issue</th>
-                            <th>Return</th>
-                            <th>Applied At</th>
-                            <th style="width:160px;">Action</th>
+                            <td>@a.Id</td>
+                            <td>@a.Book?.Title</td>
+                            <td>@a.StudentEmail</td>
+                            <td>@a.IssueDate.ToString("yyyy-MM-dd")</td>
+                            <td>@a.ReturnDate.ToString("yyyy-MM-dd")</td>
+                            <td>
+                                @* Student can edit only their own (controller enforces) *@
+                                <a class="btn btn-sm btn-warning"
+                                   asp-action="Edit"
+                                   asp-route-id="@a.Id">Edit Dates</a>
+
+                                @* Admin delete only *@
+                                @if (User.IsInRole("Admin"))
+                                {
+                                    <form asp-action="Delete" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@a.Id" />
+                                        <button type="submit" class="btn btn-sm btn-danger"
+                                                onclick="return confirm('Delete this application?')">
+                                            Delete
+                                        </button>
+                                    </form>
+                                }
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var a in Model)
-                        {
-                            <tr>
-                                <td>@a.Id</td>
-                                <td>@(a.Book?.Title ?? ("Book #" + a.BookId))</td>
-                                <td>@a.StudentId</td>
-                                <td>@a.IssueDate.ToString("yyyy-MM-dd")</td>
-                                <td>@a.ReturnDate.ToString("yyyy-MM-dd")</td>
-                                <td>@a.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
-                                <td>
-                                    @if (User.IsInRole("Admin"))
-                                    {
-                                        <form asp-action="Delete" method="post" class="d-inline">
-                                            @Html.AntiForgeryToken()
-                                            <input type="hidden" name="id" value="@a.Id" />
-                                            <button type="submit" class="btn btn-sm btn-danger"
-                                                    onclick="return confirm('Delete this application?');">
-                                                Delete
-                                            </button>
-                                        </form>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted small">No actions</span>
-                                    }
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        }
+                    }
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
