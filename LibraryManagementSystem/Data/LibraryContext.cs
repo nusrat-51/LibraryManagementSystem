@@ -22,11 +22,6 @@ namespace LibraryManagementSystem.Data
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
-
-            // Prevent duplicate application for same student + same book
-            builder.Entity<BookApplication>()
-                .HasIndex(x => new { x.BookId, x.StudentEmail })
-                .IsUnique();
         }
     }
 }

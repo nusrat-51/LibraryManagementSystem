@@ -13,31 +13,19 @@
         </div>
 
         <nav class="menu">
-            <a asp-controller="Admin" asp-action="Dashboard" class="menu-item">
-                Dashboard
-            </a>
+            <a asp-controller="Admin" asp-action="Dashboard" class="menu-item">Dashboard</a>
+            <a asp-controller="Admin" asp-action="Users" class="menu-item">Manage Users</a>
+            <a asp-controller="Admin" asp-action="Books" class="menu-item">Manage Books</a>
+            <a asp-controller="Admin" asp-action="Issues" class="menu-item">Issue List</a>
+            <a asp-controller="Admin" asp-action="Applications" class="menu-item">Applications</a>
+            <a asp-controller="Admin" asp-action="Reservations" class="menu-item">Reservations</a>
 
-            <a asp-controller="Admin" asp-action="Users" class="menu-item">
-                Manage Users
-            </a>
-
-            <a asp-controller="Librarian" asp-action="ManageBooks" class="menu-item">
-                Manage Books
-            </a>
-
-
-            <a asp-controller="Account" asp-action="Logout" class="menu-item">
-                Logout
-            </a>
+            <a asp-controller="Account" asp-action="Logout" class="menu-item">Logout</a>
         </nav>
 
-        <hr class="sidebar-divider" />
-
         <div class="theme-section">
-            <div class="theme-title">Theme</div>
-            <button id="admin-theme-toggle" class="theme-btn">
-                Light / Dark
-            </button>
+            <div class="theme-label">Theme</div>
+            <button id="themeToggle" class="theme-toggle-button">Light / Dark</button>
         </div>
     </aside>
 

@@ -1,0 +1,48 @@
+﻿@model IEnumerable<LibraryManagementSystem.Models.Book>
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+}
+
+<h2 class="page-title">Books</h2>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<a class="btn btn-primary mb-3" asp-action="CreateBook">+ Add New Book</a>
+
+<div class="card">
+    <div class="card-body">
+        <table class="table table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Title</th>
+                    <th>Author</th>
+                    <th>Category</th>
+                    <th>Total</th>
+                    <th>Available</th>
+                    <th style="width:220px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var b in Model)
+                {
+                    <tr>
+                        <td>@b.Id</td>
+                        <td>@b.Title</td>
+                        <td>@b.Author</td>
+                        <td>@b.Category</td>
+                        <td>@b.TotalCopies</td>
+                        <td>@b.AvailableCopies</td>
+                        <td>
+                            <a class="btn btn-sm btn-warning" asp-action="EditBook" asp-route-id="@b.Id">Edit</a>
+                            <a class="btn btn-sm btn-danger" asp-action="DeleteBook" asp-route-id="@b.Id">Delete</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

@@ -84,20 +84,37 @@
                 <span class="brand-name">LMS</span>
             </div>
 
+            <!-- MENU -->
             <nav class="menu">
-                <a asp-controller="Librarian" asp-action="Dashboard" class="menu-item">Dashboard</a>
-            
-                <a asp-controller="Librarian" asp-action="Reservations" class="menu-item">Reservations</a>
-                <a asp-controller="Account" asp-action="Logout" class="menu-item">Logout</a>
-                <a asp-controller="Librarian" asp-action="ManageBooks" class="menu-item">Books</a>
+                <a asp-controller="Librarian" asp-action="Dashboard" class="menu-item">
+                    Dashboard
+                </a>
+
+                <a asp-controller="Librarian" asp-action="ManageBooks" class="menu-item">
+                    Books
+                </a>
+
+                <a asp-controller="Librarian" asp-action="Reservations" class="menu-item">
+                    Reservations
+                </a>
+
+                <!-- LOGOUT MUST BE HERE -->
+                <a asp-controller="Account" asp-action="Logout" class="menu-item logout">
+                    Logout
+                </a>
+
 
             </nav>
 
+            <!-- THEME -->
             <div class="theme-section">
                 <div class="theme-label">Theme</div>
-                <button id="themeToggle" class="theme-toggle-button">Light / Dark</button>
+                <button id="themeToggle" class="theme-toggle-button">
+                    Light / Dark
+                </button>
             </div>
         </aside>
+
 
         <!-- MAIN CONTENT -->
         <div class="main">

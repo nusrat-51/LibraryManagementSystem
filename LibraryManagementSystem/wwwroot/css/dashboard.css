@@ -91,6 +91,11 @@ body {
         background: var(--accent-soft);
         color: var(--accent);
     }
+    .menu-item.logout {
+        color: inherit; /* same color as other menu items */
+        font-weight: normal;
+    }
+
 
 /* theme toggle button */
 
@@ -259,4 +264,12 @@ body {
 /* small top margin helper */
 .mt-2 {
     margin-top: 1rem;
+}
+/* FORCE Logout to look like normal menu items */
+.sidebar .menu .menu-item.logout,
+.sidebar .menu .menu-item.logout:link,
+.sidebar .menu .menu-item.logout:visited,
+.sidebar .menu .menu-item.logout:hover,
+.sidebar .menu .menu-item.logout:active {
+    color: inherit !important;
 }
