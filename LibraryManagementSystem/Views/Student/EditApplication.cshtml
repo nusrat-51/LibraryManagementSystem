@@ -5,40 +5,55 @@
     ViewData["Title"] = "Edit Application Dates";
 }
 
-<h2 class="mb-3">Edit Application Dates</h2>
+<h2 class="page-title">Edit Application Dates</h2>
 
 @if (TempData["Error"] != null)
 {
     <div class="alert alert-danger">@TempData["Error"]</div>
 }
 
-<div class="card shadow-sm">
+<div class="card">
     <div class="card-body">
-        <div class="mb-3">
-            <div class="text-muted small">Book</div>
-            <div class="fw-semibold">@Model.Book?.Title</div>
+
+        <div style="margin-bottom: 1rem;">
+            <div class="text-muted" style="font-size:0.9rem;">Book</div>
+            <div style="font-weight:600;">@(Model.Book?.Title ?? ("Book #" + Model.BookId))</div>
         </div>
 
-        <form asp-action="EditApplication" method="post">
+        <form asp-controller="Student" asp-action="EditApplication" method="post">
             @Html.AntiForgeryToken()
+
             <input type="hidden" name="id" value="@Model.Id" />
 
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <label class="form-label">Issue Date</label>
-                    <input type="date" name="issueDate" value="@Model.IssueDate.ToString("yyyy-MM-dd")" class="form-control" />
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                <div>
+                    <label style="display:block; margin-bottom:0.35rem; font-weight:600;">Issue Date</label>
+                    <input type="date"
+                           name="issueDate"
+                           value="@Model.IssueDate.ToString("yyyy-MM-dd")"
+                           style="width:100%; padding:0.55rem 0.75rem; border:1px solid var(--border-soft); border-radius:0.5rem; background:var(--bg-card); color:var(--text-main);" />
                 </div>
 
-                <div class="col-md-6">
-                    <label class="form-label">Return Date</label>
-                    <input type="date" name="returnDate" value="@Model.ReturnDate.ToString("yyyy-MM-dd")" class="form-control" />
+                <div>
+                    <label style="display:block; margin-bottom:0.35rem; font-weight:600;">Return Date</label>
+                    <input type="date"
+                           name="returnDate"
+                           value="@Model.ReturnDate.ToString("yyyy-MM-dd")"
+                           style="width:100%; padding:0.55rem 0.75rem; border:1px solid var(--border-soft); border-radius:0.5rem; background:var(--bg-card); color:var(--text-main);" />
                 </div>
             </div>
 
-            <div class="mt-4 d-flex gap-2">
-                <button class="btn btn-primary" type="submit">Save</button>
-                <a asp-action="MyApplications" class="btn btn-secondary">Back</a>
+            <div style="display:flex; gap:0.75rem; align-items:center; margin-top: 0.5rem;">
+                <button type="submit" class="btn-primary" style="margin-top:0;">Save</button>
+
+                <a asp-controller="Student"
+                   asp-action="MyApplications"
+                   class="menu-item"
+                   style="display:inline-block; width:auto; padding:0.4rem 0.9rem; border:1px solid var(--border-soft); border-radius:999px;">
+                    Back
+                </a>
             </div>
         </form>
+
     </div>
 </div>

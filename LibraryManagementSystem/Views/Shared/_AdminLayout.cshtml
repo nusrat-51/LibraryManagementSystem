@@ -20,7 +20,11 @@
             <a asp-controller="Admin" asp-action="Applications" class="menu-item">Applications</a>
             <a asp-controller="Admin" asp-action="Reservations" class="menu-item">Reservations</a>
 
-            <a asp-controller="Account" asp-action="Logout" class="menu-item">Logout</a>
+            <!-- Logout (POST) but looks like normal menu item -->
+            <form asp-controller="Account" asp-action="Logout" method="post" style="margin:0; padding:0;">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="menu-item logout">Logout</button>
+            </form>
         </nav>
 
         <div class="theme-section">
@@ -38,20 +42,4 @@
 <footer class="footer">
     © 2025 Library Management System
 </footer>
-
-@section Scripts {
-    <script>
-        const layout = document.querySelector('.layout');
-        const themeBtn = document.getElementById('admin-theme-toggle');
-        if (layout && themeBtn) {
-            const saved = localStorage.getItem('lms-theme') || 'light';
-            layout.dataset.theme = saved;
-
-            themeBtn.onclick = () => {
-                const next = layout.dataset.theme === 'light' ? 'dark' : 'light';
-                layout.dataset.theme = next;
-                localStorage.setItem('lms-theme', next);
-            };
-        }
-    </script>
 }

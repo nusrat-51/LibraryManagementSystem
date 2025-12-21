@@ -11,8 +11,15 @@
         <h2 class="login-title">Student Registration</h2>
         <p class="login-subtitle">Create your library account</p>
 
+        @if (TempData["Error"] != null)
+        {
+            <div class="alert alert-danger">@TempData["Error"]</div>
+        }
+
+        <div asp-validation-summary="All" class="text-danger mb-2"></div>
+
         <form asp-action="Register" asp-controller="Account" method="post">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            @Html.AntiForgeryToken()
 
             <div class="form-row">
                 <label asp-for="FullName"></label>
@@ -24,6 +31,13 @@
                 <label asp-for="Email"></label>
                 <input asp-for="Email" />
                 <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+
+            <!-- ✅ ADDRESS FIELD (FIX) -->
+            <div class="form-row">
+                <label asp-for="Address"></label>
+                <input asp-for="Address" placeholder="Your address" />
+                <span asp-validation-for="Address" class="text-danger"></span>
             </div>
 
             <div class="form-row">
@@ -59,6 +73,6 @@
     </div>
 </div>
 
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-}
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+<script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>

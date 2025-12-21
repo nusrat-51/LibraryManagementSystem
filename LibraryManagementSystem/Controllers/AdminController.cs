@@ -1,9 +1,12 @@
-﻿using System.Linq;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using LibraryManagementSystem.Data;
 using LibraryManagementSystem.Models;
 using LibraryManagementSystem.ViewModels.Admin;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,18 +16,26 @@ namespace LibraryManagementSystem.Controllers
     public class AdminController : Controller
     {
         private readonly LibraryContext _context;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly RoleManager<IdentityRole> _roleManager;
 
-        public AdminController(LibraryContext context)
+        public AdminController(
+            LibraryContext context,
+            UserManager<ApplicationUser> userManager,
+            RoleManager<IdentityRole> roleManager)
         {
             _context = context;
+            _userManager = userManager;
+            _roleManager = roleManager;
         }
 
         // =========================
         // DASHBOARD
+        // =========================
         [HttpGet]
         public async Task<IActionResult> Dashboard()
         {
-            var vm = new ViewModels.Admin.AdminDashboardVM
+            var vm = new AdminDashboardVM
             {
                 TotalBooks = await _context.Books.CountAsync(),
                 TotalIssues = await _context.IssueRecords.CountAsync(),
@@ -38,6 +49,84 @@ namespace LibraryManagementSystem.Controllers
             return View(vm);
         }
 
+        // =========================
+        // MANAGE USERS (FIXED)
+        // =========================
+        [HttpGet]
+        public async Task<IActionResult> Users()
+        {
+            var users = await _userManager.Users.AsNoTracking().ToListAsync();
+            var vm = new List<AdminUserVM>();
+
+            foreach (var u in users)
+            {
+                var roles = await _userManager.GetRolesAsync(u);
+
+                vm.Add(new AdminUserVM
+                {
+                    UserId = u.Id,
+                    Email = u.Email ?? "",
+                    Roles = roles.ToList(),
+                    IsLocked = u.LockoutEnd.HasValue && u.LockoutEnd.Value > DateTimeOffset.UtcNow
+                });
+            }
+
+            return View(vm); // Views/Admin/Users.cshtml
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SetRole(string id, string role)
+        {
+            if (string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(role))
+                return RedirectToAction(nameof(Users));
+
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null) return NotFound();
+
+            // Ensure role exists
+            if (!await _roleManager.RoleExistsAsync(role))
+                await _roleManager.CreateAsync(new IdentityRole(role));
+
+            // Single-role approach: remove all, then add selected role
+            var currentRoles = await _userManager.GetRolesAsync(user);
+            if (currentRoles.Any())
+                await _userManager.RemoveFromRolesAsync(user, currentRoles);
+
+            await _userManager.AddToRoleAsync(user, role);
+
+            TempData["Success"] = $"Role updated to {role} for {user.Email}.";
+            return RedirectToAction(nameof(Users));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ToggleLock(string id)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+                return RedirectToAction(nameof(Users));
+
+            var user = await _userManager.FindByIdAsync(id);
+            if (user == null) return NotFound();
+
+            var isLocked = user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTimeOffset.UtcNow;
+
+            if (isLocked)
+            {
+                // Unlock
+                await _userManager.SetLockoutEndDateAsync(user, null);
+                TempData["Success"] = $"User unlocked: {user.Email}";
+            }
+            else
+            {
+                // Lock (100 years)
+                await _userManager.SetLockoutEnabledAsync(user, true);
+                await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.UtcNow.AddYears(100));
+                TempData["Success"] = $"User locked: {user.Email}";
+            }
+
+            return RedirectToAction(nameof(Users));
+        }
 
         // =========================
         // BOOK LIST (Admin can view + create + edit + delete)
@@ -176,7 +265,10 @@ namespace LibraryManagementSystem.Controllers
             TempData["Success"] = "Application deleted successfully!";
             return RedirectToAction(nameof(Applications));
         }
-        //reservation
+
+        // =========================
+        // RESERVATIONS
+        // =========================
         [HttpGet]
         public async Task<IActionResult> Reservations()
         {
@@ -186,9 +278,7 @@ namespace LibraryManagementSystem.Controllers
                 .OrderByDescending(r => r.Id)
                 .ToListAsync();
 
-           
             return View(list);
         }
-
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using LibraryManagementSystem.Data;
 using LibraryManagementSystem.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -9,7 +10,6 @@ namespace LibraryManagementSystem.Controllers
 {
     public class AccountController : Controller
     {
-        // Use ApplicationUser everywhere
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
@@ -28,7 +28,7 @@ namespace LibraryManagementSystem.Controllers
         }
 
         // =========================
-        //  LOGIN (GET)
+        // LOGIN (GET)
         // =========================
         [HttpGet]
         [AllowAnonymous]
@@ -39,7 +39,7 @@ namespace LibraryManagementSystem.Controllers
         }
 
         // =========================
-        //  LOGIN (POST)
+        // LOGIN (POST)
         // =========================
         [HttpPost]
         [AllowAnonymous]
@@ -51,68 +51,39 @@ namespace LibraryManagementSystem.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
-            // 1) Find user by email
             var user = await _userManager.FindByEmailAsync(model.Email);
-            if (user == null)
+            if (user == null ||
+                !await _userManager.CheckPasswordAsync(user, model.Password))
             {
-                ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                ModelState.AddModelError("", "Invalid login attempt.");
                 return View(model);
             }
 
-            // 2) Check password first (without signing in yet)
-            var passwordValid = await _userManager.CheckPasswordAsync(user, model.Password);
-            if (!passwordValid)
-            {
-                ModelState.AddModelError(string.Empty, "Invalid login attempt.");
-                return View(model);
-            }
-
-            // 3) Check that selected role matches user's roles
-            //    (SelectedRole comes from the "Login as" dropdown)
             if (!string.IsNullOrWhiteSpace(model.SelectedRole))
             {
                 var roles = await _userManager.GetRolesAsync(user);
                 if (!roles.Contains(model.SelectedRole))
                 {
                     ModelState.AddModelError(
-                        string.Empty,
-                        $"You are not registered as {model.SelectedRole}.");
-
+                        "", $"You are not registered as {model.SelectedRole}.");
                     return View(model);
                 }
             }
 
-            // 4) Actually sign in
             await _signInManager.SignOutAsync();
-            var signInResult = await _signInManager.PasswordSignInAsync(
-                user,
-                model.Password,
-                isPersistent: false,
-                lockoutOnFailure: false);
+            await _signInManager.PasswordSignInAsync(
+                user, model.Password, false, false);
 
-            if (!signInResult.Succeeded)
+            return model.SelectedRole switch
             {
-                ModelState.AddModelError(string.Empty, "Invalid login attempt.");
-                return View(model);
-            }
-
-            // 5) Redirect based on selected (now validated) role
-            switch (model.SelectedRole)
-            {
-                case "Admin":
-                    return RedirectToAction("Dashboard", "Admin");
-
-                case "Librarian":
-                    return RedirectToAction("Dashboard", "Librarian");
-
-                case "Student":
-                default:
-                    return RedirectToAction("Dashboard", "Student");
-            }
+                "Admin" => RedirectToAction("Dashboard", "Admin"),
+                "Librarian" => RedirectToAction("Dashboard", "Librarian"),
+                _ => RedirectToAction("Dashboard", "Student")
+            };
         }
 
         // =========================
-        //  REGISTER STUDENT (GET)
+        // REGISTER (GET)
         // =========================
         [HttpGet]
         [AllowAnonymous]
@@ -122,26 +93,34 @@ namespace LibraryManagementSystem.Controllers
         }
 
         // =========================
-        //  REGISTER STUDENT (POST)
+        // REGISTER (POST) ✅ FIXED
+        // =========================
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(RegisterViewModel model)
         {
             if (!ModelState.IsValid)
+            {
+                TempData["Error"] = "Please fix the errors and try again.";
                 return View(model);
+            }
 
-            // ✅ Generate StudentId + MemberId
-            var studentId = "STU-" + Guid.NewGuid().ToString("N").Substring(0, 6).ToUpper();
-            var memberId = "MID-" + Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper();
+            // prevent duplicate email
+            if (await _userManager.FindByEmailAsync(model.Email) != null)
+            {
+                ModelState.AddModelError("", "Email is already registered.");
+                return View(model);
+            }
+
+            var studentId = "STU-" + Guid.NewGuid().ToString("N")[..6].ToUpper();
+            var memberId = "MID-" + Guid.NewGuid().ToString("N")[..8].ToUpper();
 
             var user = new ApplicationUser
             {
                 UserName = model.Email,
                 Email = model.Email,
                 EmailConfirmed = true,
-
-                // ✅ new fields
                 StudentId = studentId,
                 MemberId = memberId,
                 Name = model.FullName,
@@ -152,20 +131,20 @@ namespace LibraryManagementSystem.Controllers
 
             if (!result.Succeeded)
             {
-                foreach (var error in result.Errors)
-                    ModelState.AddModelError(string.Empty, error.Description);
+                foreach (var err in result.Errors)
+                    ModelState.AddModelError("", err.Description);
 
+                TempData["Error"] = "Registration failed.";
                 return View(model);
             }
 
-            // Ensure Student role exists
-            const string studentRole = "Student";
-            if (!await _roleManager.RoleExistsAsync(studentRole))
-                await _roleManager.CreateAsync(new IdentityRole(studentRole));
+            // Ensure Student role
+            if (!await _roleManager.RoleExistsAsync("Student"))
+                await _roleManager.CreateAsync(new IdentityRole("Student"));
 
-            await _userManager.AddToRoleAsync(user, studentRole);
+            await _userManager.AddToRoleAsync(user, "Student");
 
-            // ✅ Create membership record too (so MemberId exists)
+            // Create membership
             _context.Memberships.Add(new Membership
             {
                 UserId = user.Id,
@@ -179,13 +158,15 @@ namespace LibraryManagementSystem.Controllers
 
             await _context.SaveChangesAsync();
 
-            await _signInManager.SignInAsync(user, isPersistent: false);
-            return RedirectToAction("Dashboard", "Student");
+            // ✅ SUCCESS MESSAGE + redirect
+            TempData["Success"] =
+                "Registration successful! Please login to continue.";
+
+            return RedirectToAction("Login", "Account");
         }
 
-
         // =========================
-        //  LOGOUT
+        // LOGOUT
         // =========================
         [HttpPost]
         [ValidateAntiForgeryToken]

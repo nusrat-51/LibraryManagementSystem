@@ -1,33 +1,43 @@
-﻿@@model IEnumerable<LibraryManagementSystem.ViewModels.Student.MyIssueVM>
+﻿@model IEnumerable<LibraryManagementSystem.Models.IssueRecord>
 
 @{
+    ViewData["Title"] = "My Issues";
     Layout = "~/Views/Shared/_StudentLayout.cshtml";
-    ViewData["Title"] = "My Issued Books";
 }
 
+<h2 class="page-title">My Issue Records</h2>
 
-<h2>My Issued Books</h2>
-
-<table class="table table-bordered">
-    <thead>
-        <tr>
-            <th>Book</th>
-            <th>Issued On</th>
-            <th>Status</th>
-            <th>Return Date</th>
-            <th>Action</th>
-        </tr>
-    </thead>
-
-  <tbody>
-@foreach (var item in Model)
-{
-    <tr>
-        <td>@item.BookTitle</td>
-        <td>@item.IssueDate.ToShortDateString()</td>
-        <td>@item.Status</td>
-        <td>@(item.ReturnDate?.ToShortDateString() ?? "-")</td>
-        <td>@item.FineAmount.ToString("0.00")</td>
-    </tr>
-}
-</tbody>
+<div class="card">
+    <div class="card-body">
+        @if (Model == null || !Model.Any())
+        {
+            <div class="text-muted">No issue records found.</div>
+        }
+        else
+        {
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Book</th>
+                        <th>Issued On</th>
+                        <th>Return Date</th>
+                        <th>Status</th>
+                        <th>Fine</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var i in Model)
+                    {
+                        <tr>
+                            <td>@(i.Book?.Title ?? "N/A")</td>
+                            <td>@i.IssueDate.ToString("yyyy-MM-dd")</td>
+                            <td>@(i.ReturnDate.HasValue? i.ReturnDate.Value.ToString("yyyy-MM-dd") : "-")</td>
+                            <td>@i.Status</td>
+                            <td>@i.FineAmount.ToString("0.00")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>

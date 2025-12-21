@@ -77,49 +77,60 @@ body {
     gap: 0.25rem;
 }
 
+/* ? IMPORTANT FIX:
+   Any link inside sidebar menu should NEVER show default blue/underline,
+   even if you forgot class="menu-item" */
+.sidebar .menu a {
+    display: block;
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    border-radius: 0.5rem;
+    text-decoration: none !important;
+    color: var(--text-sidebar) !important;
+    font-size: 0.95rem;
+    text-align: left;
+    box-sizing: border-box;
+}
+
+    .sidebar .menu a:hover {
+        background: var(--accent-soft);
+        color: var(--accent) !important;
+    }
+
+/* menu item base (works for <a> AND <button>) */
 .menu-item {
     display: block;
+    width: 100%;
     padding: 0.6rem 0.75rem;
     border-radius: 0.5rem;
     text-decoration: none;
     color: var(--text-sidebar);
     font-size: 0.95rem;
+    text-align: left;
+    box-sizing: border-box;
 }
 
-    .menu-item:hover,
-    .menu-item.active {
-        background: var(--accent-soft);
-        color: var(--accent);
-    }
-    .menu-item.logout {
-        color: inherit; /* same color as other menu items */
-        font-weight: normal;
-    }
-
-
-/* theme toggle button */
-
-.theme-toggle {
-    margin-top: 2rem;
-    font-size: 0.85rem;
-    color: var(--text-muted);
-    border-top: 1px solid var(--border-soft);
-    padding-top: 1rem;
+/* If menu-item is a button, remove default button styles */
+button.menu-item {
+    background: none;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    font: inherit; /* keep same font as menu */
+    -webkit-appearance: none;
+    appearance: none;
 }
 
-    .theme-toggle button {
-        border: 1px solid var(--border-soft);
-        background: var(--bg-card);
-        color: var(--text-main);
-        border-radius: 999px;
-        padding: 0.25rem 0.75rem;
-        cursor: pointer;
-        font-size: 0.85rem;
-    }
+.menu-item:hover,
+.menu-item.active {
+    background: var(--accent-soft);
+    color: var(--accent);
+}
 
-        .theme-toggle button:hover {
-            border-color: var(--accent);
-        }
+.menu-item.logout {
+    color: var(--text-sidebar);
+    font-weight: normal;
+}
 
 /* MAIN AREA */
 
@@ -182,6 +193,7 @@ body {
     background: var(--bg-footer);
     border-top: 1px solid var(--border-soft);
 }
+
 .dashboard-page {
     max-width: 1100px;
     margin: 0 auto;
@@ -265,11 +277,12 @@ body {
 .mt-2 {
     margin-top: 1rem;
 }
-/* FORCE Logout to look like normal menu items */
+
+/* FORCE Logout to look like normal menu items (anchor/button both) */
 .sidebar .menu .menu-item.logout,
 .sidebar .menu .menu-item.logout:link,
 .sidebar .menu .menu-item.logout:visited,
 .sidebar .menu .menu-item.logout:hover,
 .sidebar .menu .menu-item.logout:active {
-    color: inherit !important;
+    color: var(--text-sidebar) !important;
 }

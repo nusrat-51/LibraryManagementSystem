@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
 using LibraryManagementSystem.Data;
+using LibraryManagementSystem.Models;
 using LibraryManagementSystem.ViewModels.Student;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -18,6 +19,9 @@ namespace LibraryManagementSystem.Controllers
             _context = context;
         }
 
+        // =========================
+        // DASHBOARD
+        // =========================
         [HttpGet]
         public async Task<IActionResult> Dashboard()
         {
@@ -44,7 +48,7 @@ namespace LibraryManagementSystem.Controllers
                 .OrderBy(b => b.Title)
                 .ToListAsync();
 
-            // show last 5 applications as "recent"
+            // last 5 applications as "recent"
             var recent = await _context.BookApplications
                 .AsNoTracking()
                 .Include(a => a.Book)
@@ -74,8 +78,7 @@ namespace LibraryManagementSystem.Controllers
                     IsApplied = appliedBookIds.Contains(b.Id)
                 }).ToList(),
 
-                // reuse your UI section (still works)
-                RecentIssues = recent.Select(x => new LibraryManagementSystem.Models.IssueRecord
+                RecentIssues = recent.Select(x => new IssueRecord
                 {
                     Book = x.Book,
                     IssueDate = x.IssueDate,
@@ -85,6 +88,46 @@ namespace LibraryManagementSystem.Controllers
             };
 
             return View(vm);
+        }
+
+        // =========================
+        // MY ISSUES  -> Views/Student/MyIssues.cshtml ✅ already exists
+        // =========================
+        [HttpGet]
+        public async Task<IActionResult> MyIssues()
+        {
+            var email = User.Identity?.Name;
+            if (string.IsNullOrWhiteSpace(email))
+                return Unauthorized();
+
+            var issues = await _context.IssueRecords
+                .AsNoTracking()
+                .Include(i => i.Book)
+                .Where(i => i.StudentEmail == email)
+                .OrderByDescending(i => i.IssueDate)
+                .ToListAsync();
+
+            return View(issues); // Views/Student/MyIssues.cshtml
+        }
+
+        // =========================
+        // MY APPLICATIONS -> Views/Student/MyApplications.cshtml ✅ already exists
+        // =========================
+        [HttpGet]
+        public async Task<IActionResult> MyApplications()
+        {
+            var email = User.Identity?.Name;
+            if (string.IsNullOrWhiteSpace(email))
+                return Unauthorized();
+
+            var apps = await _context.BookApplications
+                .AsNoTracking()
+                .Include(a => a.Book)
+                .Where(a => a.StudentEmail == email)
+                .OrderByDescending(a => a.CreatedAt)
+                .ToListAsync();
+
+            return View(apps); // Views/Student/MyApplications.cshtml
         }
     }
 }

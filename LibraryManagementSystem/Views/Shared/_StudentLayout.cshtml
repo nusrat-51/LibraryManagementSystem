@@ -79,13 +79,19 @@
 
             <nav class="menu">
                 <a asp-controller="Student" asp-action="Dashboard" class="menu-item">Dashboard</a>
-                <a asp-controller="BookApplications" asp-action="History" class="menu-item">Application History</a>
+
+                <a asp-controller="Student" asp-action="MyApplications" class="menu-item">Application History</a>
+
                 <a asp-controller="Student" asp-action="MyIssues" class="menu-item">Issues</a>
-                <a asp-controller="BookApplications" asp-action="Index" class="menu-item">Applications</a>
+
+                <a asp-controller="Student" asp-action="MyApplications" class="menu-item">Applications</a>
 
                 <a asp-controller="Student" asp-action="ViewBooks" class="menu-item">View Books</a>
-                <a asp-controller="Account" asp-action="Logout" class="menu-item logout">Logout</a>
 
+                <form asp-controller="Account" asp-action="Logout" method="post" style="margin:0;">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="menu-item logout">Logout</button>
+                </form>
             </nav>
 
             <div class="theme-section">
