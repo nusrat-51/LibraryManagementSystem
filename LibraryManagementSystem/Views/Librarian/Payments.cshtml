@@ -1,0 +1,142 @@
+﻿@model List<LibraryManagementSystem.Models.Payment>
+
+@{
+    Layout = "~/Views/Shared/_LibrarianLayout.cshtml";
+    ViewData["Title"] = "Payments Verification";
+}
+
+<h2 class="mb-3">Payments Verification</h2>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+<div class="card shadow-sm">
+    <div class="card-body">
+
+        @if (Model == null || !Model.Any())
+        {
+            <div class="text-muted">No payments found.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Student</th>
+                            <th>Book</th>
+                            <th>Fine Amount</th>
+                            <th>Method</th>
+                            <th>Status</th>
+                            <th>Txn Ref</th>
+                            <th>Created</th>
+                            <th style="width:320px;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            int sl = 1;
+                        }
+
+                        @foreach (var p in Model)
+                        {
+                            var student = p.Fine?.StudentEmail ?? "-";
+                            var book = p.Fine?.IssueRecord?.Book?.Title ?? "-";
+                            var amount = p.Amount;
+                            var created = p.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm");
+                            var status = p.Status.ToString();
+                            var method = p.Method.ToString();
+                            var txn = string.IsNullOrWhiteSpace(p.TransactionRef) ? "-" : p.TransactionRef;
+
+                            <tr>
+                                <td>@sl</td>
+                                <td>@student</td>
+                                <td>@book</td>
+                                <td><strong>@amount.ToString("0.00")</strong></td>
+                                <td>
+                                    <span class="badge bg-info text-dark">@method</span>
+                                </td>
+                                <td>
+                                    @if (p.Status == LibraryManagementSystem.Models.PaymentStatus.Paid)
+                                    {
+                                        <span class="badge bg-success">Paid</span>
+                                    }
+                                    else if (p.Status == LibraryManagementSystem.Models.PaymentStatus.Rejected)
+                                    {
+                                        <span class="badge bg-danger">Rejected</span>
+                                    }
+                                    else if (p.Status == LibraryManagementSystem.Models.PaymentStatus.PendingVerification)
+                                    {
+                                        <span class="badge bg-warning text-dark">Pending Verification</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">Pending</span>
+                                    }
+                                </td>
+                                <td>@txn</td>
+                                <td>@created</td>
+
+                                <td class="d-flex flex-wrap gap-2">
+
+                                    @* ✅ Receipt download: show only if Paid *@
+                                    @if (p.Status == LibraryManagementSystem.Models.PaymentStatus.Paid)
+                                    {
+                                        <a class="btn btn-sm btn-outline-success"
+                                           asp-controller="Librarian"
+                                           asp-action="DownloadReceipt"
+                                           asp-route-paymentId="@p.Id">
+                                            Download Receipt (PDF)
+                                        </a>
+                                    }
+
+                                    @* ✅ Verify buttons: show only if NOT paid/rejected *@
+                                    @if (p.Status == LibraryManagementSystem.Models.PaymentStatus.Pending
+                                                                || p.Status == LibraryManagementSystem.Models.PaymentStatus.PendingVerification)
+                                    {
+                                        <form asp-controller="Librarian"
+                                              asp-action="ConfirmPayment"
+                                              method="post"
+                                              style="margin:0;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@p.Id" />
+                                            <button class="btn btn-sm btn-primary" type="submit">
+                                                Confirm
+                                            </button>
+                                        </form>
+
+                                        <form asp-controller="Librarian"
+                                              asp-action="RejectPayment"
+                                              method="post"
+                                              style="margin:0;">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@p.Id" />
+                                            <button class="btn btn-sm btn-outline-danger" type="submit"
+                                                    onclick="return confirm('Reject this payment?');">
+                                                Reject
+                                            </button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">No actions</span>
+                                    }
+                                </td>
+                            </tr>
+
+                            sl++;
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+
+    </div>
+</div>

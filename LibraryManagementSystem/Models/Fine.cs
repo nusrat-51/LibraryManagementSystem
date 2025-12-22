@@ -6,20 +6,19 @@ namespace LibraryManagementSystem.Models
     {
         public int Id { get; set; }
 
-        // কোন বই/issue থেকে fine এসেছে (ইচ্ছা করলে null)
-        public int? IssueRecordId { get; set; }
-        public IssueRecord? IssueRecord { get; set; }
+        public int IssueRecordId { get; set; }
+        public IssueRecord IssueRecord { get; set; } = null!;
 
         public string StudentEmail { get; set; } = string.Empty;
 
         public decimal Amount { get; set; }
-
         public bool IsPaid { get; set; }
-        public DateTime? PaidOn { get; set; }
 
-        // Online payment reference (Bkash/Stripe mock)
-        public string? PaymentReference { get; set; }
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? PaidAt { get; set; }
+        public int? LastPaymentId { get; set; }
+        public PaymentMethod? PaymentMethod { get; set; }
+        
 
-        public string? Notes { get; set; }
     }
 }

@@ -1,11 +1,13 @@
-﻿using System.Linq;
-using System.Threading.Tasks;
-using LibraryManagementSystem.Data;
+﻿using LibraryManagementSystem.Data;
 using LibraryManagementSystem.Models;
+using LibraryManagementSystem.Services;
 using LibraryManagementSystem.ViewModels.Student;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace LibraryManagementSystem.Controllers
 {
@@ -13,10 +15,18 @@ namespace LibraryManagementSystem.Controllers
     public class StudentController : Controller
     {
         private readonly LibraryContext _context;
+        private readonly FineCalculator _fineCalculator;
+        private readonly IReceiptPdfService _receiptPdf;
 
-        public StudentController(LibraryContext context)
+        // ✅ Only ONE constructor
+        public StudentController(
+            LibraryContext context,
+            FineCalculator fineCalculator,
+            IReceiptPdfService receiptPdf)
         {
             _context = context;
+            _fineCalculator = fineCalculator;
+            _receiptPdf = receiptPdf;
         }
 
         // =========================
@@ -36,7 +46,6 @@ namespace LibraryManagementSystem.Controllers
             var namePart = email.Split('@')[0];
             var friendlyName = char.ToUpper(namePart[0]) + namePart.Substring(1);
 
-            // applied book ids (disable Apply)
             var appliedBookIds = await _context.BookApplications
                 .AsNoTracking()
                 .Where(a => a.StudentEmail == email)
@@ -48,7 +57,6 @@ namespace LibraryManagementSystem.Controllers
                 .OrderBy(b => b.Title)
                 .ToListAsync();
 
-            // last 5 applications as "recent"
             var recent = await _context.BookApplications
                 .AsNoTracking()
                 .Include(a => a.Book)
@@ -80,7 +88,7 @@ namespace LibraryManagementSystem.Controllers
 
                 RecentIssues = recent.Select(x => new IssueRecord
                 {
-                    Book = x.Book,
+                    Book = x.Book!,
                     IssueDate = x.IssueDate,
                     Status = "Applied",
                     FineAmount = 0
@@ -91,7 +99,134 @@ namespace LibraryManagementSystem.Controllers
         }
 
         // =========================
-        // MY ISSUES  -> Views/Student/MyIssues.cshtml ✅ already exists
+        // FINES
+        // =========================
+        [HttpGet]
+        public async Task<IActionResult> MyFines()
+        {
+            var email = User.Identity?.Name;
+            if (string.IsNullOrWhiteSpace(email))
+                return Unauthorized();
+
+            await _fineCalculator.RecalculateStudentFinesAsync(email);
+
+            var fines = await _context.Fines
+                .AsNoTracking()
+                .Include(f => f.IssueRecord)
+                .ThenInclude(i => i.Book)
+                .Where(f => f.StudentEmail == email)
+                .OrderByDescending(f => f.CreatedAt)
+                .ToListAsync();
+
+            return View(fines);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> PayFine(int fineId)
+        {
+            var email = User.Identity?.Name;
+            if (string.IsNullOrWhiteSpace(email))
+                return Unauthorized();
+
+            var fine = await _context.Fines
+                .Include(f => f.IssueRecord)
+                .ThenInclude(i => i.Book)
+                .FirstOrDefaultAsync(f => f.Id == fineId && f.StudentEmail == email);
+
+            if (fine == null) return NotFound();
+
+            if (fine.IsPaid)
+            {
+                TempData["Success"] = "Fine already paid.";
+                return RedirectToAction(nameof(MyFines));
+            }
+
+            return View(fine);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> PayFineCOD(int fineId)
+        {
+            var email = User.Identity?.Name;
+            if (string.IsNullOrWhiteSpace(email))
+                return Unauthorized();
+
+            var fine = await _context.Fines.FirstOrDefaultAsync(f => f.Id == fineId && f.StudentEmail == email);
+            if (fine == null) return NotFound();
+            if (fine.IsPaid) return RedirectToAction(nameof(MyFines));
+
+            _context.Payments.Add(new Payment
+            {
+                FineId = fine.Id,
+                Method = PaymentMethod.COD,
+                Status = PaymentStatus.Pending,
+                Amount = fine.Amount
+            });
+
+            await _context.SaveChangesAsync();
+            TempData["Success"] = "COD request submitted. Please pay at counter and wait for confirmation.";
+            return RedirectToAction(nameof(MyFines));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> PayFineBkash(int fineId, string transactionRef)
+        {
+            var email = User.Identity?.Name;
+            if (string.IsNullOrWhiteSpace(email))
+                return Unauthorized();
+
+            var fine = await _context.Fines.FirstOrDefaultAsync(f => f.Id == fineId && f.StudentEmail == email);
+            if (fine == null) return NotFound();
+            if (fine.IsPaid) return RedirectToAction(nameof(MyFines));
+
+            if (string.IsNullOrWhiteSpace(transactionRef))
+            {
+                TempData["Error"] = "bKash Transaction ID is required.";
+                return RedirectToAction(nameof(PayFine), new { fineId });
+            }
+
+            _context.Payments.Add(new Payment
+            {
+                FineId = fine.Id,
+                Method = PaymentMethod.BKASH,
+                Status = PaymentStatus.PendingVerification,
+                Amount = fine.Amount,
+                TransactionRef = transactionRef.Trim()
+            });
+
+            await _context.SaveChangesAsync();
+            TempData["Success"] = "bKash payment submitted for verification.";
+            return RedirectToAction(nameof(MyFines));
+        }
+
+        // =========================
+        // DOWNLOAD RECEIPT PDF
+        // =========================
+        [HttpGet]
+        public async Task<IActionResult> DownloadReceipt(int paymentId)
+        {
+            var email = User.Identity?.Name;
+            if (string.IsNullOrWhiteSpace(email))
+                return Unauthorized();
+
+            var ok = await _context.Payments
+                .AsNoTracking()
+                .Include(p => p.Fine)
+                .AnyAsync(p =>
+                    p.Id == paymentId &&
+                    p.Fine.StudentEmail == email &&
+                    p.Status == PaymentStatus.Paid);
+
+            if (!ok) return NotFound();
+
+            var bytes = await _receiptPdf.BuildPaymentReceiptAsync(paymentId);
+            return File(bytes, "application/pdf", $"Receipt-PAY-{paymentId}.pdf");
+        }
+
+        // =========================
+        // MY ISSUES
         // =========================
         [HttpGet]
         public async Task<IActionResult> MyIssues()
@@ -107,11 +242,11 @@ namespace LibraryManagementSystem.Controllers
                 .OrderByDescending(i => i.IssueDate)
                 .ToListAsync();
 
-            return View(issues); // Views/Student/MyIssues.cshtml
+            return View(issues);
         }
 
         // =========================
-        // MY APPLICATIONS -> Views/Student/MyApplications.cshtml ✅ already exists
+        // MY APPLICATIONS
         // =========================
         [HttpGet]
         public async Task<IActionResult> MyApplications()
@@ -127,7 +262,21 @@ namespace LibraryManagementSystem.Controllers
                 .OrderByDescending(a => a.CreatedAt)
                 .ToListAsync();
 
-            return View(apps); // Views/Student/MyApplications.cshtml
+            return View(apps);
+        }
+
+        // =========================
+        // VIEW BOOKS
+        // =========================
+        [HttpGet]
+        public async Task<IActionResult> ViewBooks()
+        {
+            var books = await _context.Books
+                .AsNoTracking()
+                .OrderBy(b => b.Title)
+                .ToListAsync();
+
+            return View(books);
         }
     }
 }

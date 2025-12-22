@@ -1,0 +1,126 @@
+﻿@model List<LibraryManagementSystem.Models.Fine>
+
+@{
+    Layout = "~/Views/Shared/_StudentLayout.cshtml";
+    ViewData["Title"] = "My Fines";
+}
+
+<h2 class="mb-3">My Fines</h2>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
+<div class="card shadow-sm">
+    <div class="card-body">
+
+        @if (Model == null || !Model.Any())
+        {
+            <div class="text-muted">No fines found.</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Book</th>
+                            <th>Issue Date</th>
+                            <th>Due Date</th>
+                            <th>Days Late</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th style="width:300px;">Action</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @{
+                            int sl = 1;
+                            var today = DateTime.UtcNow.Date;
+                        }
+
+                        @foreach (var f in Model)
+                        {
+                            var bookTitle = f.IssueRecord?.Book?.Title
+                            ?? ("Book #" + (f.IssueRecord?.BookId.ToString() ?? "-"));
+
+                            DateTime? issueDate = f.IssueRecord?.IssueDate;
+                            DateTime? dueDate = f.IssueRecord?.ReturnDate; // your flow uses ReturnDate as due-date
+
+                            var daysLate = 0;
+                            if (!f.IsPaid && dueDate.HasValue)
+                            {
+                                var late = (today - dueDate.Value.Date).Days;
+                                daysLate = late > 0 ? late : 0;
+                            }
+
+                            <tr>
+                                <td>@sl</td>
+                                <td>@bookTitle</td>
+
+                                <td>@(issueDate.HasValue? issueDate.Value.ToString("yyyy-MM-dd") : "-")</td>
+                                <td>@(dueDate.HasValue? dueDate.Value.ToString("yyyy-MM-dd") : "-")</td>
+
+                                <td>@daysLate</td>
+
+                                <td><strong>@f.Amount.ToString("0.00")</strong></td>
+
+                                <td>
+                                    @if (f.IsPaid)
+                                    {
+                                        <span class="badge bg-success">Paid</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning text-dark">Unpaid</span>
+                                    }
+                                </td>
+
+                                <td class="d-flex flex-wrap gap-2">
+                                    @if (!f.IsPaid)
+                                    {
+                                        <a class="btn btn-sm btn-primary"
+                                           asp-controller="Student"
+                                           asp-action="PayFine"
+                                           asp-route-fineId="@f.Id">
+                                            Pay Now
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        if (f.LastPaymentId.HasValue)
+                                        {
+                                            <a class="btn btn-sm btn-outline-success"
+                                               asp-controller="Student"
+                                               asp-action="DownloadReceipt"
+                                               asp-route-paymentId="@f.LastPaymentId.Value">
+                                                Download Receipt (PDF)
+                                            </a>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small">Receipt will appear after admin confirmation.</span>
+                                        }
+                                    }
+                                </td>
+                            </tr>
+
+                            sl++;
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-3 text-muted small">
+                Note: Due Date is taken from IssueRecord.ReturnDate (your current flow uses it as due-date).
+            </div>
+        }
+    </div>
+</div>

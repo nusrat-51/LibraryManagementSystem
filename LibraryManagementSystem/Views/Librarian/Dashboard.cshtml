@@ -5,6 +5,13 @@
     ViewData["Title"] = "Librarian Dashboard";
 }
 
+@if (Model == null)
+{
+    <div class="alert alert-danger">
+        Dashboard model is null. Fix LibrarianController.Dashboard() to return View(model).
+    </div>
+    return;
+}
 
 <div class="dashboard-page">
     <h1 class="page-title mb-4">Librarian Dashboard</h1>
@@ -123,12 +130,14 @@
                         <a asp-controller="Issue" asp-action="Index" class="btn btn-outline-primary w-100">
                             Issue / Return Books
                         </a>
+                        <a asp-controller="Librarian" asp-action="Payments" class="btn btn-outline-success w-100">
+                            Verify Payments
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Overview text -->
         <div class="col-lg-8">
             <div class="card shadow-sm h-100">
                 <div class="card-body">
@@ -141,8 +150,7 @@
                     <p class="text-muted mb-0">
                         The charts above give you an at-a-glance view of how the library is performing
                         today — including issued books, overdue items, active reservations, and fine
-                        activity. You can later bind these charts to more detailed time-series data
-                        (e.g., issues per day, fines per month) without changing the overall layout.
+                        activity.
                     </p>
                 </div>
             </div>
@@ -183,29 +191,24 @@
             background-color: rgba(245, 158, 11, 0.12);
         }
 
-        .badge.bg-soft-primary,
-        .badge.bg-soft-success,
-        .badge.bg-soft-danger,
-        .badge.bg-soft-warning {
+        .badge.bg-soft-primary, .badge.bg-soft-success, .badge.bg-soft-danger, .badge.bg-soft-warning {
             font-weight: 500;
             border-radius: 999px;
             padding: 0.35rem 0.7rem;
             font-size: 0.7rem;
         }
 
-        /* Chart container sizes so everything fits nicely on one page */
         .chart-body-lg {
             position: relative;
-            height: 220px; /* main line chart height */
+            height: 220px;
         }
 
         .chart-body-sm {
             position: relative;
-            height: 220px; /* pie chart height */
+            height: 220px;
         }
 
-            .chart-body-lg canvas,
-            .chart-body-sm canvas {
+            .chart-body-lg canvas, .chart-body-sm canvas {
                 width: 100% !important;
                 height: 100% !important;
             }
@@ -213,21 +216,18 @@
 }
 
 @section Scripts {
-    <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script>
         (function () {
-            // Existing model values (no logic changed)
-            var totalBooks = @Model.TotalBooks;
-            var issuedToday = @Model.IssuedToday;
-            var overdueCount = @Model.OverdueCount;
-            var activeReservations = @Model.ActiveReservations;
+                    var totalBooks = @(Model?.TotalBooks ?? 0);
+        var issuedToday = @(Model?.IssuedToday ?? 0);
+           var overdueCount = @(Model?.OverdueCount ?? 0);
+           var activeReservations = @(Model?.ActiveReservations ?? 0);
 
             var totalUnpaidFine = parseFloat("@Model.TotalUnpaidFine.ToString(System.Globalization.CultureInfo.InvariantCulture)");
             var lastFineCollected = parseFloat("@Model.LastFineCollected.ToString(System.Globalization.CultureInfo.InvariantCulture)");
 
-            // LINE chart for snapshot
             var snapshotCtx = document.getElementById('snapshotChart');
             if (snapshotCtx) {
                 new Chart(snapshotCtx, {
@@ -239,39 +239,18 @@
                             data: [totalBooks, issuedToday, overdueCount, activeReservations],
                             borderWidth: 2,
                             fill: false,
-                            tension: 0.3 // slight curve
+                            tension: 0.3
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                display: false
-                            },
-                            tooltip: {
-                                mode: 'index',
-                                intersect: false
-                            }
-                        },
-                        scales: {
-                            x: {
-                                grid: {
-                                    display: false
-                                }
-                            },
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    precision: 0
-                                }
-                            }
-                        }
+                        plugins: { legend: { display: false } },
+                        scales: { y: { beginAtZero: true, ticks: { precision: 0 } }, x: { grid: { display: false } } }
                     }
                 });
             }
 
-            // PIE chart for fines
             var finesCtx = document.getElementById('finesChart');
             if (finesCtx) {
                 new Chart(finesCtx, {
@@ -283,15 +262,7 @@
                             borderWidth: 1
                         }]
                     },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'bottom'
-                            }
-                        }
-                    }
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
                 });
             }
         })();

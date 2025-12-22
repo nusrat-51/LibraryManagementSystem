@@ -18,6 +18,8 @@ namespace LibraryManagementSystem.Data
         public DbSet<Reservation> Reservations { get; set; }
         public DbSet<BookReturn> BookReturns { get; set; }
         public DbSet<BookApplication> BookApplications { get; set; }
+        public DbSet<Payment> Payments { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

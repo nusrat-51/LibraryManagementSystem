@@ -1,7 +1,36 @@
-﻿@{
+﻿@model LibraryManagementSystem.Models.Fine
+@{
+    Layout = "~/Views/Shared/_StudentLayout.cshtml";
     ViewData["Title"] = "Pay Fine";
 }
 
 <h2>Pay Fine</h2>
 
-<p>@ViewBag.Message</p>
+<div class="card">
+    <div class="card-body">
+        <p><strong>Book:</strong> @Model.IssueRecord.Book.Title</p>
+        <p><strong>Amount:</strong> ৳ @Model.Amount</p>
+
+        <form asp-action="PayFineCOD" method="post" class="mb-3">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="fineId" value="@Model.Id" />
+            <button class="btn btn-warning">
+                Pay by COD
+            </button>
+        </form>
+
+        <form asp-action="PayFineBkash" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="fineId" value="@Model.Id" />
+
+            <div class="mb-2">
+                <label>bKash Transaction ID</label>
+                <input name="transactionRef" class="form-control" required />
+            </div>
+
+            <button class="btn btn-success">
+                Pay by bKash
+            </button>
+        </form>
+    </div>
+</div>

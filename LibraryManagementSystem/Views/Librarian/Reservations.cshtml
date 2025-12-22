@@ -1,16 +1,25 @@
-﻿@model List<LibraryManagementSystem.Models.Book>
+﻿@model List<LibraryManagementSystem.Models.Reservation>
 @{
     Layout = "~/Views/Shared/_LibrarianLayout.cshtml";
-    ViewData["Title"] = "Books";
+    ViewData["Title"] = "Reservations";
 }
 
-<h2 class="mb-3">Books</h2>
+<h2 class="mb-3">Reservations</h2>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
 
 <div class="card shadow-sm">
     <div class="card-body">
         @if (Model == null || !Model.Any())
         {
-            <div class="text-muted">No books found.</div>
+            <div class="text-muted">No reservations found.</div>
         }
         else
         {
@@ -19,27 +28,25 @@
                     <thead>
                         <tr>
                             <th>#</th>
-                            <th>Title</th>
-                            <th>Author</th>
-                            <th>Category</th>
-                            <th>Total</th>
-                            <th>Available</th>
+                            <th>Reservation ID</th>
+                            <th>Book</th>
+                            <th>Student</th>
                         </tr>
                     </thead>
                     <tbody>
                         @{
                             int sl = 1;
                         }
-                        @foreach (var b in Model)
+
+                        @foreach (var r in Model)
                         {
                             <tr>
                                 <td>@sl</td>
-                                <td>@b.Title</td>
-                                <td>@b.Author</td>
-                                <td>@b.Category</td>
-                                <td>@b.TotalCopies</td>
-                                <td>@b.AvailableCopies</td>
+                                <td>@r.Id</td>
+                                <td>@(r.Book?.Title ?? ("Book #" + r.BookId))</td>
+                                <td>@r.StudentEmail</td>
                             </tr>
+
                             sl++;
                         }
                     </tbody>

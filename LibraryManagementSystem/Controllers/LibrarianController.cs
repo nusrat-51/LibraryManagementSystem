@@ -4,11 +4,13 @@ using LibraryManagementSystem.ViewModels.Librarian;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace LibraryManagementSystem.Controllers
 {
-    [Authorize(Roles = "Librarian,Admin")]
+    [Authorize(Roles = "Librarian")]
     public class LibrarianController : Controller
     {
         private readonly LibraryContext _context;
@@ -18,167 +20,134 @@ namespace LibraryManagementSystem.Controllers
             _context = context;
         }
 
-        // ===========================
-        //  DASHBOARD
-        // ===========================
+        // =========================
+        // DASHBOARD
+        // =========================
+        [HttpGet]
         public async Task<IActionResult> Dashboard()
         {
-            var model = new LibrarianDashboardViewModel
+            var vm = new LibrarianDashboardViewModel
             {
                 TotalBooks = await _context.Books.CountAsync(),
 
-                IssuedToday = 0,
-                OverdueCount = 0,
-                ActiveReservations = 0,
+                IssuedToday = await _context.IssueRecords
+                    .CountAsync(i => i.IssueDate.Date == DateTime.UtcNow.Date),
 
-                StudentsWithUnpaidFines = 0,
-                TotalUnpaidFine = 0m,
-                LastFineCollected = 0m
+                OverdueCount = await _context.IssueRecords
+                    .CountAsync(i =>
+                        i.ReturnDate.HasValue &&
+                        i.ReturnDate.Value.Date < DateTime.UtcNow.Date &&
+                        i.Status != "Returned"),
+
+                // ✅ ReservationStatus is ENUM, not string
+                ActiveReservations = await _context.Reservations
+    .CountAsync(r => r.Status == ReservationStatus.Pending),
+
+                StudentsWithUnpaidFines = await _context.Fines
+                    .Where(f => !f.IsPaid)
+                    .Select(f => f.StudentEmail)
+                    .Distinct()
+                    .CountAsync(),
+
+                TotalUnpaidFine = await _context.Fines
+                    .Where(f => !f.IsPaid)
+                    .Select(f => (decimal?)f.Amount)
+                    .SumAsync() ?? 0m,
+
+                LastFineCollected = await _context.Fines
+                    .Where(f => f.IsPaid && f.PaidAt.HasValue)
+                    .OrderByDescending(f => f.PaidAt)
+                    .Select(f => (decimal?)f.Amount)
+                    .FirstOrDefaultAsync() ?? 0m
             };
 
-            return View(model);
+            return View(vm); // Views/Librarian/Dashboard.cshtml
         }
 
-        // ===========================
-        //  ISSUES MENU (SIDEBAR)
-        //  /Librarian/Issues  ->  /Issue/Index
-        // ===========================
-        // ===========================
-        //  ISSUES & RETURNS MENU LINKS
-        // ===========================
-
-        // /Librarian/Issues  ->  /Issue/Index
-        public IActionResult Issues()
-        {
-            return RedirectToAction("Index", "Issue");
-        }
-
-        // /Librarian/Returns ->  /Returns/Index
-        public IActionResult Returns()
-        {
-            return RedirectToAction("Index", "Returns");
-        }
-        // /Librarian/Reservations  ->  /Reservations/Index
-        public IActionResult Reservations()
-        {
-            return RedirectToAction("Index", "Reservations");
-        }
-
-
-        // ===========================
-        //  MANAGE BOOKS (LIST)
-        // ===========================
+        // =========================
+        // BOOKS LIST (for ManageBooks page)
+        // =========================
+        [HttpGet]
         public async Task<IActionResult> ManageBooks()
         {
-            var books = await _context.Books.ToListAsync();
-            return View(books);
+            var books = await _context.Books
+                .AsNoTracking()
+                .OrderBy(b => b.Title)
+                .ToListAsync();
+
+            return View(books); // Views/Librarian/ManageBooks.cshtml
         }
 
-        // ===========================
-        //  CREATE BOOK (GET)
-        // ===========================
-        public IActionResult CreateBook()
-        {
-            return View();
-        }
-
-        // ===========================
-        //  CREATE BOOK (POST)
-        // ===========================
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateBook(Book model)
-        {
-            if (!ModelState.IsValid)
-                return View(model);
-
-            model.AvailableCopies = model.TotalCopies;
-
-            _context.Books.Add(model);
-            await _context.SaveChangesAsync();
-
-            TempData["Success"] = "Book added successfully!";
-            return RedirectToAction(nameof(ManageBooks));
-        }
+        // =========================
+        // RESERVATIONS
+        // =========================
         [HttpGet]
-        public IActionResult Create()
+        public async Task<IActionResult> Reservations()
         {
-            return RedirectToAction(nameof(CreateBook));
+            var list = await _context.Reservations
+                .AsNoTracking()
+                .Include(r => r.Book)
+                // ✅ Your model doesn't have CreatedAt, so order by Id (safe)
+                .OrderByDescending(r => r.Id)
+                .ToListAsync();
+
+            return View(list); // Views/Librarian/Reservations.cshtml
         }
 
-        // ===========================
-        //  EDIT BOOK (GET)
-        // ===========================
-        public async Task<IActionResult> EditBook(int id)
+        // =========================
+        // PAYMENTS (VERIFY)
+        // =========================
+        [HttpGet]
+        public async Task<IActionResult> Payments()
         {
-            var book = await _context.Books.FindAsync(id);
-            if (book == null) return NotFound();
+            var list = await _context.Payments
+                .AsNoTracking()
+                .Include(p => p.Fine)
+                .ThenInclude(f => f.IssueRecord)
+                .ThenInclude(i => i.Book)
+                .OrderByDescending(p => p.CreatedAt)
+                .ToListAsync();
 
-            return View(book);
+            return View(list); // Views/Librarian/Payments.cshtml
         }
 
-        // ===========================
-        //  EDIT BOOK (POST)
-        // ===========================
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditBook(Book model)
+        public async Task<IActionResult> ConfirmPayment(int id)
         {
-            if (!ModelState.IsValid)
-                return View(model);
+            var payment = await _context.Payments
+                .Include(p => p.Fine)
+                .FirstOrDefaultAsync(p => p.Id == id);
 
-            var book = await _context.Books.FindAsync(model.Id);
-            if (book == null) return NotFound();
+            if (payment == null) return NotFound();
 
-            book.Title = model.Title;
-            book.Author = model.Author;
-            book.Category = model.Category;
-            book.TotalCopies = model.TotalCopies;
-            book.AvailableCopies = model.AvailableCopies;
+            payment.Status = PaymentStatus.Paid;
+            payment.PaidAt = DateTime.UtcNow;
+
+            payment.Fine.IsPaid = true;
+            payment.Fine.PaidAt = DateTime.UtcNow;
+            payment.Fine.PaymentMethod = payment.Method;
 
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = "Book updated successfully!";
-            return RedirectToAction(nameof(ManageBooks));
+            TempData["Success"] = "Payment confirmed.";
+            return RedirectToAction(nameof(Payments));
         }
 
-        // ===========================
-        //  BOOK DETAILS
-        // ===========================
-        public async Task<IActionResult> BookDetails(int id)
-        {
-            var book = await _context.Books.FindAsync(id);
-            if (book == null) return NotFound();
-
-            return View(book);
-        }
-
-        // ===========================
-        //  DELETE BOOK (GET)
-        // ===========================
-        public async Task<IActionResult> DeleteBook(int id)
-        {
-            var book = await _context.Books.FindAsync(id);
-            if (book == null) return NotFound();
-
-            return View(book);
-        }
-
-        // ===========================
-        //  DELETE BOOK (POST)
-        // ===========================
-        [HttpPost, ActionName("DeleteBook")]
+        [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteBookConfirmed(int id)
+        public async Task<IActionResult> RejectPayment(int id)
         {
-            var book = await _context.Books.FindAsync(id);
-            if (book == null) return NotFound();
+            var payment = await _context.Payments
+                .FirstOrDefaultAsync(p => p.Id == id);
 
-            _context.Books.Remove(book);
+            if (payment == null) return NotFound();
+
+            payment.Status = PaymentStatus.Rejected;
             await _context.SaveChangesAsync();
 
-            TempData["Success"] = "Book deleted successfully!";
-            return RedirectToAction(nameof(ManageBooks));
+            TempData["Success"] = "Payment rejected.";
+            return RedirectToAction(nameof(Payments));
         }
     }
 }

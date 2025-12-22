@@ -97,24 +97,18 @@
                 <a asp-controller="Librarian" asp-action="Reservations" class="menu-item">
                     Reservations
                 </a>
-
-                <!-- LOGOUT MUST BE HERE -->
-                <a asp-controller="Account" asp-action="Logout" class="menu-item logout">
-                    Logout
+                <a asp-controller="Librarian" asp-action="Payments"class="menu-item">Payments
                 </a>
 
 
+
+                <!-- LOGOUT (POST) -->
+                <form asp-controller="Account" asp-action="Logout" method="post" style="margin:0;">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="menu-item logout">Logout</button>
+                </form>
             </nav>
-
-            <!-- THEME -->
-            <div class="theme-section">
-                <div class="theme-label">Theme</div>
-                <button id="themeToggle" class="theme-toggle-button">
-                    Light / Dark
-                </button>
-            </div>
         </aside>
-
 
         <!-- MAIN CONTENT -->
         <div class="main">
@@ -134,7 +128,6 @@
     <script>
         (function () {
             var toggleBtn = document.getElementById("sidebarToggle");
-
             toggleBtn.addEventListener("click", function () {
                 document.body.classList.toggle("sidebar-closed");
             });

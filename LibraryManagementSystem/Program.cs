@@ -1,7 +1,9 @@
 ﻿using LibraryManagementSystem.Data;
 using LibraryManagementSystem.Models;
+using LibraryManagementSystem.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using QuestPDF.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,12 +11,10 @@ var builder = WebApplication.CreateBuilder(args);
 // DATABASE
 // =====================
 builder.Services.AddDbContext<LibraryContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection")
-    ));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // =====================
-// IDENTITY (THIS FIXES YOUR ERROR)
+// IDENTITY
 // =====================
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
@@ -27,15 +27,32 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 .AddEntityFrameworkStores<LibraryContext>()
 .AddDefaultTokenProviders();
 
+// ✅ Ensure unauthorized redirects go to your Account/Login
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.LoginPath = "/Account/Login";
+    options.AccessDeniedPath = "/Account/AccessDenied";
+});
+
 // =====================
 // MVC
 // =====================
 builder.Services.AddControllersWithViews();
+// QuestPDF license (some versions require this)
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+
+// DI
+builder.Services.AddScoped<IReceiptPdfService, ReceiptPdfService>();
+builder.Services.AddScoped<FineCalculator>();
+
+
+// ✅ Register FineCalculator only ONCE
+builder.Services.AddScoped<FineCalculator>();
 
 var app = builder.Build();
 
 // =====================
-// MIDDLEWARE ORDER (VERY IMPORTANT)
+// MIDDLEWARE ORDER
 // =====================
 if (!app.Environment.IsDevelopment())
 {
@@ -48,7 +65,7 @@ app.UseStaticFiles();
 
 app.UseRouting();
 
-// 🔥 THESE TWO LINES FIX YOUR ISSUE
+// ✅ Must be here (after routing, before map routes)
 app.UseAuthentication();
 app.UseAuthorization();
 
